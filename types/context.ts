@@ -16,6 +16,9 @@ export type WorkoutTime =
   | "none";
 
 export interface UserContextProfile {
+  // Profile Meta
+  profileName?: string;
+
   // Location
   city: string;
   
@@ -39,7 +42,15 @@ export interface UserContextProfile {
   canSealWindows: boolean;
 }
 
+export interface SavedProfile {
+  id: string;
+  name: string;
+  savedAt: string;
+  context: UserContextProfile;
+}
+
 export const DEFAULT_USER_CONTEXT: UserContextProfile = {
+  profileName: "Default Family Profile",
   city: "New Delhi",
   hasChildren: true,
   hasElderly: true,
@@ -55,3 +66,72 @@ export const DEFAULT_USER_CONTEXT: UserContextProfile = {
   hasIndoorPlants: false,
   canSealWindows: true,
 };
+
+export const INITIAL_SAVED_PROFILES: SavedProfile[] = [
+  {
+    id: "profile-vulnerable-family",
+    name: "Home (Family with Asthmatic Child & Elderly)",
+    savedAt: "2026-11-22T08:00:00.000Z",
+    context: {
+      profileName: "Home (Family with Asthmatic Child & Elderly)",
+      city: "New Delhi",
+      hasChildren: true,
+      hasElderly: true,
+      hasAsthmaOrRespiratory: true,
+      hasHeartCondition: false,
+      isPregnant: false,
+      primaryCommuteMode: "two-wheeler",
+      commuteDurationMinutes: 40,
+      workoutPreference: "early-morning",
+      workoutType: "outdoor",
+      hasAirPurifier: false,
+      roomAreaSqFt: 250,
+      hasIndoorPlants: false,
+      canSealWindows: true,
+    },
+  },
+  {
+    id: "profile-urban-professional",
+    name: "Office Commute (Urban Professional)",
+    savedAt: "2026-11-22T08:00:00.000Z",
+    context: {
+      profileName: "Office Commute (Urban Professional)",
+      city: "Gurugram",
+      hasChildren: false,
+      hasElderly: false,
+      hasAsthmaOrRespiratory: false,
+      hasHeartCondition: false,
+      isPregnant: false,
+      primaryCommuteMode: "car-petrol",
+      commuteDurationMinutes: 45,
+      workoutPreference: "evening",
+      workoutType: "indoor",
+      hasAirPurifier: true,
+      roomAreaSqFt: 400,
+      hasIndoorPlants: true,
+      canSealWindows: true,
+    },
+  },
+  {
+    id: "profile-active-cyclist",
+    name: "Fitness / Morning Cyclist",
+    savedAt: "2026-11-22T08:00:00.000Z",
+    context: {
+      profileName: "Fitness / Morning Cyclist",
+      city: "Bengaluru",
+      hasChildren: false,
+      hasElderly: false,
+      hasAsthmaOrRespiratory: false,
+      hasHeartCondition: false,
+      isPregnant: false,
+      primaryCommuteMode: "bicycle",
+      commuteDurationMinutes: 30,
+      workoutPreference: "early-morning",
+      workoutType: "outdoor",
+      hasAirPurifier: false,
+      roomAreaSqFt: 200,
+      hasIndoorPlants: true,
+      canSealWindows: false,
+    },
+  },
+];

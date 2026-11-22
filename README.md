@@ -30,24 +30,38 @@ Traditional weather apps merely report a static AQI number without actionable gu
   * **Night (21:00–06:00)**: Bedroom air purification runtime and draft sealing.
 * **Instant Evaluator Preview**: Includes an in-app **"Preview Morning Alert"** button connected to the browser's **Web Notifications API** for immediate demonstration.
 
-### 2. 🎯 Personalized Household Context Profiling
+### 2. 🎯 Personalized Household Context Profiling & Named Profiles
 * Adapts all GenAI recommendations to:
   * **Vulnerabilities**: Children under 12, elderly seniors, asthmatics/respiratory conditions, heart conditions, pregnancy.
   * **Commute Mode**: Two-wheeler, solo petrol car, EV, city bus, metro, bicycle, walking.
   * **Living Space**: Room area in sq ft, air purifier availability, window sealing capacity.
+* **Named Profile Storage**: Create and name multiple household profiles (e.g., *"Home - Anand Vihar Flat"*, *"Office Commute"*, *"Parents' House"*) saved persistently in browser `localStorage` with a 1-click active profile switcher.
 * **Emergency Cautions**: Generates targeted alerts (e.g., advising asthmatic users on rescue inhaler prep and children on pediatric N95 usage).
 
-### 3. 🌿 NASA Phytoremediation & Frugal Indoor Air Defense
+### 3. 🗺️ AQICN Geospatial Air Quality Heatmap
+* **Interactive Leaflet Integration**: Embeds an interactive map with OpenStreetMap base layer and live `aqicn.org` raster tile layers.
+* **Multi-Pollutant Layer Switching**: Toggle seamlessly between **Overall AQI** (`usepa-aqi`), **$\text{PM}_{2.5}$ Heatmap** (`usepa-pm25`), **$\text{PM}_{10}$ Dust** (`usepa-pm10`), and **$\text{NO}_2$ Exhaust** (`usepa-no2`).
+* **Ground Monitoring Stations**: Pins real-time CPCB and WAQI ground stations with colored severity circles and AQI popups.
+* **Dual State**: Seamless preview mode with prompt to connect a WAQI token to unlock live regional tile feeds.
+
+### 4. 🔑 In-UI API Key Management & Dynamic Feature Unlock
+* **Zero-Setup Resilience**: Runs 100% offline-ready with deterministic heuristic fallbacks without requiring keys.
+* **Direct UI Key Entry**: Dedicated **API Keys Modal** to configure `GEMINI_API_KEY` and `WAQI_API_TOKEN` with live upstream verification (`/api/auth-keys`).
+* **Real-Time Unlocks**:
+  * **Gemini Authenticated**: Header pulses green, recommendations switch to **Google Gemini 1.5 Flash GenAI Live**, and an interactive **Gemini Copilot Chat** is unlocked for custom user queries.
+  * **WAQI Authenticated**: Activates live AQICN raster tiles and fetches direct CPCB ground sensor data.
+
+### 5. 🌿 NASA Phytoremediation & Frugal Indoor Air Defense
 * **NASA Clean Air Study Calculator**: Dynamically computes exact plant counts (Snake Plants, Areca Palms, Spider Plants, Peace Lilies) tailored to the room's square footage.
 * **DIY Corsi-Rosenthal Box Guide**: Step-by-step instructions for assembling a high-efficiency MERV-13 box filter at 20% of commercial purifier costs.
 * **Wet Mopping & Humidity Guidance**: Scientific techniques to prevent dust resuspension and stabilize particulate settling.
 
-### 4. 🚆 Sustainable Transit & Exposure Offset Justifier
+### 6. 🚆 Sustainable Transit & Exposure Offset Justifier
 * **Quantified Inhalation Reduction**: Calculates personal fine dust exposure savings (e.g., shifting from an open two-wheeler to the metro slashes $\text{PM}_{2.5}$ inhalation by **80%+**).
 * **Carbon Abatement Counters**: Real-time computation of $\text{CO}_2$ kilograms prevented per trip.
 * **Clear Justification**: Transparent explanations of the physiological and environmental impacts.
 
-### 5. 🛡️ Live Telemetry & Judge Benchmark Presets
+### 7. 🛡️ Live Telemetry & Judge Benchmark Presets
 * **Zero-Friction Live Data**: Queries Open-Meteo Air Quality & Geocoding APIs (Copernicus CAMS atmospheric model) with **zero API keys required**.
 * **CPCB Breakpoint Classification**: Mathematical sub-index formulas mapping $\text{PM}_{2.5}$ and $\text{PM}_{10}$ to Indian Central Pollution Control Board categories (Good, Satisfactory, Moderate, Poor, Very Poor, Severe).
 * **Evaluator Fast-Track Presets**: Toggle between *Delhi Severe Winter Inversion (AQI 468)*, *Industrial Smog (AQI 325)*, *Urban Moderate (AQI 142)*, and *Coastal Clean (AQI 36)* to test app dynamics under any condition.

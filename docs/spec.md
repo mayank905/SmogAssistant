@@ -44,6 +44,10 @@ Key capabilities:
 13. As a community member, I want clear, natural-language justifications for every suggestion so that I understand the scientific reason behind each recommended behavioral change.
 14. As an evaluator testing notification flows, I want a "Preview Morning Briefing" button so that I can immediately inspect the notification card and day plan without having to wait until 6:30 AM.
 15. As a mobile phone user, I want a fully responsive layout with touch-friendly controls so that I can consult the assistant seamlessly on any device.
+16. As a user with multiple living or working environments, I want to create, name, and save multiple personalized household profiles (e.g. "Home - Anand Vihar", "Office Commute", "Parents' House") and seamlessly toggle between them with persistent local storage.
+17. As a web user, I want error-free Next.js SSR hydration with zero server-client text discrepancies or layout flickering.
+18. As a geospatial analyst or concerned citizen, I want an interactive AQICN.org Leaflet map that renders live raster tile overlays (PM2.5, PM10, NO2, AQI) and ground station markers centered on my selected city.
+19. As an evaluator or user, I want to enter my Google Gemini API key and WAQI API token directly into an in-app Key Manager modal, verify them live against upstream services, and watch GenAI Copilot reasoning and live AQICN map layers dynamically unlock in real-time.
 
 ---
 

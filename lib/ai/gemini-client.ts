@@ -4,12 +4,82 @@ import { UserContextProfile } from "@/types/context";
 import { AIRecommendationResponse } from "@/types/recommendations";
 import { generateDeterministicRecommendations } from "./heuristic-fallback";
 
+/**
+ * Validates a Gemini API Key with a lightweight ping test
+ */
+export async function verifyGeminiKey(apiKey: string): Promise<{ valid: boolean; message: string }> {
+  if (!apiKey || apiKey.trim().length === 0) {
+    return { valid: false, message: "API key cannot be empty" };
+  }
+
+  try {
+    const genAI = new GoogleGenerativeAI(apiKey.trim());
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const result = await model.generateContent("Respond with the single word: OK");
+    const text = result.response.text();
+    if (text && text.length > 0) {
+      return { valid: true, message: "Gemini 1.5 Flash authenticated successfully!" };
+    }
+    return { valid: false, message: "No response from Gemini API" };
+  } catch (err: any) {
+    const errorMessage = err?.message || "Invalid or restricted API key";
+    return { valid: false, message: errorMessage };
+  }
+}
+
+/**
+ * Interactive Copilot Query - unlocked when Gemini API key is authenticated
+ */
+export async function queryGeminiCopilot(
+  userQuestion: string,
+  telemetry: AirQualityTelemetry,
+  context: UserContextProfile,
+  overrideApiKey?: string
+): Promise<string> {
+  const apiKey = overrideApiKey?.trim() || process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new Error("Gemini API key is required for Copilot queries.");
+  }
+
+  const genAI = new GoogleGenerativeAI(apiKey);
+  const model = genAI.getGenerativeModel({
+    model: "gemini-1.5-flash",
+    systemInstruction: "You are SmogAssistant Copilot, an expert environmental health AI advisor specializing in South Asian winter smog and air quality navigation. Provide concise, actionable, empathetic, scientifically grounded advice.",
+  });
+
+  const prompt = `
+Current Telemetry:
+- City: ${telemetry.location.city}
+- CPCB AQI: ${telemetry.overallAqi} (${telemetry.cpcbCategory})
+- Primary Pollutant: ${telemetry.primaryPollutant}
+- PM2.5: ${telemetry.pollutants.pm25.value} µg/m³
+- PM10: ${telemetry.pollutants.pm10.value} µg/m³
+
+User Household Profile:
+- Vulnerabilities: Children: ${context.hasChildren}, Elderly: ${context.hasElderly}, Asthmatic/Respiratory: ${context.hasAsthmaOrRespiratory}, Heart: ${context.hasHeartCondition}, Pregnant: ${context.isPregnant}
+- Primary Commute: ${context.primaryCommuteMode} (${context.commuteDurationMinutes} min)
+- Exercise: ${context.workoutType} at ${context.workoutPreference}
+- Purifier at home: ${context.hasAirPurifier ? "Yes" : "No"}
+
+User Question: "${userQuestion}"
+
+Provide a clear, direct, and structured 2-3 paragraph answer tailored directly to their air quality and household situation.
+`;
+
+  const result = await model.generateContent(prompt);
+  return result.response.text();
+}
+
+/**
+ * Generate full structured daily air quality and mitigation recommendations
+ */
 export async function generateAIRecommendations(
   telemetry: AirQualityTelemetry,
-  context: UserContextProfile
+  context: UserContextProfile,
+  overrideApiKey?: string
 ): Promise<AIRecommendationResponse> {
   const startTime = Date.now();
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = overrideApiKey?.trim() || process.env.GEMINI_API_KEY;
 
   // If no Gemini API key is configured, immediately use the deterministic fallback engine
   if (!apiKey) {
@@ -99,28 +169,30 @@ Return a JSON object conforming STRICTLY to the following structure:
       {
         "name": string,
         "botanicalName": string,
+        "primaryToxinTarget": string,
         "countNeeded": number,
-        "targetedPollutants": string[],
-        "careDifficulty": "Easy" | "Moderate",
-        "placementTip": string
+        "maintenanceLevel": "Low" | "Moderate" | "High",
+        "careNotes": string,
+        "lightRequirement": string
       }
     ],
-    "diyLowCostHacks": string[]
+    "airCleanerDIYAlternative": string
   },
   "sustainableCommute": {
-    "currentMode": string,
-    "suggestedMode": string,
-    "pm25InhalationSavedPct": number,
-    "estimatedCo2SavedKg": number,
-    "actionableAdvice": string,
-    "impactJustification": string
+    "currentMode": "${context.primaryCommuteMode}",
+    "recommendedMode": string,
+    "exposureReductionPct": number,
+    "co2AbatementKg": number,
+    "pm25InhalationReductionMicrograms": number,
+    "justification": string
   },
   "vulnerableAlerts": [
     {
-      "targetGroup": "Children" | "Elderly" | "Asthmatics" | "Pregnant" | "General Public",
-      "severity": "Warning" | "Critical",
-      "specificWarning": string,
-      "emergencyAction": string
+      "group": "Children" | "Elderly" | "Asthma / Respiratory" | "Heart Patients" | "General Population",
+      "severity": "Warning" | "High Alert" | "Emergency",
+      "symptomsToWatch": string[],
+      "immediateAction": string,
+      "mitigationSteps": string[]
     }
   ]
 }

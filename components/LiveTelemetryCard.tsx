@@ -1,18 +1,32 @@
-import React from "react";
+"use client";
+
+import React, { useState, useEffect } from "react";
 import { AirQualityTelemetry } from "@/types/aqi";
 import { getCategoryMetadata } from "@/lib/aqi-calculator";
-import { AlertCircle, Clock, MapPin, Radio, Activity } from "lucide-react";
+import { AlertCircle, Clock, MapPin, Radio, Activity, CheckCircle2 } from "lucide-react";
 
 interface LiveTelemetryCardProps {
   telemetry: AirQualityTelemetry;
   isLoading?: boolean;
+  isWaqiActive?: boolean;
 }
 
 export const LiveTelemetryCard: React.FC<LiveTelemetryCardProps> = ({
   telemetry,
   isLoading,
+  isWaqiActive = false,
 }) => {
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   const meta = getCategoryMetadata(telemetry.cpcbCategory);
+
+  const formattedTime = isMounted
+    ? new Date(telemetry.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+    : "Live Feed";
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 overflow-hidden relative">
@@ -39,14 +53,24 @@ export const LiveTelemetryCard: React.FC<LiveTelemetryCardProps> = ({
           )}
         </div>
 
-        <div className="flex items-center space-x-2">
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-700">
-            <Radio className="w-3 h-3 mr-1 text-emerald-500 animate-pulse" />
-            {telemetry.isSimulated ? "Scenario Mode" : "Live API Stream"}
-          </span>
-          <span className="text-xs text-slate-400 flex items-center">
+        <div className="flex items-center space-x-2 flex-wrap">
+          {isWaqiActive ? (
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+              <CheckCircle2 className="w-3 h-3 mr-1 text-emerald-600" />
+              WAQI Ground Station Active
+            </span>
+          ) : (
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-700">
+              <Radio className="w-3 h-3 mr-1 text-emerald-500 animate-pulse" />
+              {telemetry.isSimulated ? "Scenario Mode" : "Open-Meteo & CPCB Model"}
+            </span>
+          )}
+          <span 
+            className="text-xs text-slate-400 flex items-center font-mono"
+            suppressHydrationWarning
+          >
             <Clock className="w-3 h-3 mr-1" />
-            {new Date(telemetry.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+            {formattedTime}
           </span>
         </div>
       </div>

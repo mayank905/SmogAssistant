@@ -9,8 +9,11 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const telemetry: AirQualityTelemetry = body.telemetry || SCENARIO_PRESETS[0].telemetry;
     const context: UserContextProfile = body.context || DEFAULT_USER_CONTEXT;
+    
+    // Check for client-provided Gemini key from header or body
+    const clientKey = request.headers.get("x-gemini-key") || body.apiKey;
 
-    const recommendations = await generateAIRecommendations(telemetry, context);
+    const recommendations = await generateAIRecommendations(telemetry, context, clientKey);
     return NextResponse.json(recommendations);
   } catch (error: any) {
     console.error("Recommendations API error:", error);
