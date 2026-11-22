@@ -1,9 +1,10 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
+import type { Map as LeafletMap, TileLayer as LeafletTileLayer, LayerGroup as LeafletLayerGroup } from "leaflet";
 import { AirQualityTelemetry } from "@/types/aqi";
 import { getCategoryMetadata } from "@/lib/aqi-calculator";
-import { Map as MapIcon, Layers, Key, ShieldCheck, ExternalLink, RefreshCw } from "lucide-react";
+import { Map as MapIcon, Layers, Key, RefreshCw } from "lucide-react";
 
 interface AqiMapViewProps {
   telemetry: AirQualityTelemetry;
@@ -29,9 +30,9 @@ export const AqiMapView: React.FC<AqiMapViewProps> = ({
   onOpenKeyModal,
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
-  const mapInstanceRef = useRef<any>(null);
-  const aqicnTileLayerRef = useRef<any>(null);
-  const markerRef = useRef<any>(null);
+  const mapInstanceRef = useRef<LeafletMap | null>(null);
+  const aqicnTileLayerRef = useRef<LeafletTileLayer | null>(null);
+  const markerRef = useRef<LeafletLayerGroup | null>(null);
 
   const [activeLayer, setActiveLayer] = useState<AqicnLayer>("usepa-aqi");
   const [isClient, setIsClient] = useState(false);
@@ -54,7 +55,7 @@ export const AqiMapView: React.FC<AqiMapViewProps> = ({
       if (isCancelled || !mapContainerRef.current) return;
 
       // Fix default Leaflet icon paths
-      delete (L.Icon.Default.prototype as any)._getIconUrl;
+      delete (L.Icon.Default.prototype as unknown as { _getIconUrl?: unknown })._getIconUrl;
       L.Icon.Default.mergeOptions({
         iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
         iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",

@@ -2,19 +2,26 @@ import { NextRequest, NextResponse } from "next/server";
 import { searchCities, fetchLiveAirQuality } from "@/lib/api/open-meteo";
 import { SCENARIO_PRESETS } from "@/lib/api/scenario-presets";
 import { fetchWaqiByCoordinates } from "@/lib/api/waqi";
+import { AirQualityTelemetry } from "@/types/aqi";
 
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
-    const scenarioId = searchParams.get("scenario");
-    const search = searchParams.get("search");
-    const city = searchParams.get("city");
+    const rawScenarioId = searchParams.get("scenario");
+    const rawSearch = searchParams.get("search");
+    const rawCity = searchParams.get("city");
     const latParam = searchParams.get("lat");
     const lonParam = searchParams.get("lon");
-    const waqiToken = request.headers.get("x-waqi-token") || searchParams.get("waqiToken");
+    const rawWaqiToken = request.headers.get("x-waqi-token") || searchParams.get("waqiToken");
+
+    // Sanitize parameters
+    const search = rawSearch ? rawSearch.replace(/[^\w\s.,-]/g, "").trim().slice(0, 100) : null;
+    const city = rawCity ? rawCity.replace(/[^\w\s.,-]/g, "").trim().slice(0, 100) : null;
+    const scenarioId = rawScenarioId ? rawScenarioId.replace(/[^\w-]/g, "").trim().slice(0, 50) : null;
+    const waqiToken = rawWaqiToken ? rawWaqiToken.replace(/[^\w-]/g, "").trim().slice(0, 128) : null;
 
     // 1. If searching for cities for auto-complete
-    if (search) {
+    if (search && search.length >= 2) {
       const results = await searchCities(search);
       return NextResponse.json({ results });
     }
@@ -35,7 +42,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Helper to enrich with WAQI if token is available
-    const enrichWithWaqi = async (telemetry: any, lat: number, lon: number) => {
+    const enrichWithWaqi = async (telemetry: AirQualityTelemetry, lat: number, lon: number): Promise<AirQualityTelemetry> => {
       if (!waqiToken) return telemetry;
       try {
         const waqiData = await fetchWaqiByCoordinates(lat, lon, waqiToken);
@@ -57,11 +64,11 @@ export async function GET(request: NextRequest) {
       return telemetry;
     };
 
-    // 3. If explicit coordinates are provided
+    // 3. If explicit coordinates are provided (validated within bounds)
     if (latParam && lonParam) {
       const lat = parseFloat(latParam);
       const lon = parseFloat(lonParam);
-      if (!isNaN(lat) && !isNaN(lon)) {
+      if (Number.isFinite(lat) && Number.isFinite(lon) && lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180) {
         let telemetry = await fetchLiveAirQuality(lat, lon, city || "Target Location");
         telemetry = await enrichWithWaqi(telemetry, lat, lon);
         return NextResponse.json({ telemetry });
@@ -69,7 +76,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 4. If city name is provided, geocode and fetch
-    if (city) {
+    if (city && city.length >= 2) {
       const cities = await searchCities(city);
       if (cities.length > 0) {
         const target = cities[0];
@@ -87,8 +94,9 @@ export async function GET(request: NextRequest) {
         title: SCENARIO_PRESETS[0].title,
       },
     });
-  } catch (error: any) {
-    console.error("AQI API route error:", error);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Internal error";
+    console.error("AQI API route error:", message);
     return NextResponse.json(
       { 
         error: "Failed to fetch air quality telemetry", 

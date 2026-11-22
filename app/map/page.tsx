@@ -1,11 +1,24 @@
 "use client";
 
 import React from "react";
+import dynamic from "next/dynamic";
 import { useAppContext } from "@/context/AppContext";
-import { AqiMapView } from "@/components/AqiMapView";
 import { CitySearchBar } from "@/components/CitySearchBar";
 import { ScenarioSwitcher } from "@/components/ScenarioSwitcher";
-import { Map, MapPin, Key, ExternalLink, ShieldCheck, Layers, Info } from "lucide-react";
+import { Map, MapPin, Key, Layers, Info, ShieldCheck } from "lucide-react";
+
+const AqiMapView = dynamic(
+  () => import("@/components/AqiMapView").then((mod) => mod.AqiMapView),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="w-full h-[360px] sm:h-[420px] rounded-2xl bg-slate-100 border border-slate-200 animate-pulse flex flex-col items-center justify-center p-6 text-slate-400">
+        <Map className="w-10 h-10 mb-2 opacity-50 animate-bounce" />
+        <p className="text-xs font-semibold">Loading High-Resolution Geospatial Map Engine...</p>
+      </div>
+    ),
+  }
+);
 
 export default function MapPage() {
   const {

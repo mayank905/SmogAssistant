@@ -78,10 +78,34 @@ const OFF_TOPIC_PATTERNS: { pattern: RegExp; reason: string }[] = [
     pattern: /\b(broken (bone|leg|arm)|toothache|dental cavity|acne treatment|hair loss|sprained ankle|appendix pain)\b/i,
     reason: "unrelated-medical"
   },
-  // Prompt injection & jailbreak attempts
+  // Prompt injection, jailbreak attempts & leetspeak evasion
   {
     pattern: /\b(ignore (all\s+)?previous instructions|disregard (all\s+)?prior rules|you are now dan|unrestricted ai|act as an uncensored|developer mode enabled)\b/i,
     reason: "jailbreak-attempt"
+  },
+  {
+    pattern: /\b(1gnore|pr0mpt|byp4ss|j4ilbreak|syst3m|unr3stricted|d1sregard)\b/i,
+    reason: "jailbreak-leetspeak"
+  },
+  {
+    pattern: /\b(override (system|prior|all) (prompt|instructions|rules)|bypass (guardrails|safety|restrictions)|jailbreak mode)\b/i,
+    reason: "jailbreak-override"
+  },
+  {
+    pattern: /\b(leak (the )?prompt|reveal (your )?system (prompt|instructions)|show (me )?your initial prompt)\b/i,
+    reason: "prompt-extraction"
+  },
+  {
+    pattern: /\bact as (an? )?(unrestricted|uncensored|unfiltered|jailbroken|evil|unbounded|arbitrary)\b/i,
+    reason: "jailbreak-roleplay"
+  },
+  {
+    pattern: /(<system>|\[system\]|role:\s*['"]system['"]|<<<system>>>|<\/system>)/i,
+    reason: "jailbreak-system-tag"
+  },
+  {
+    pattern: /\b(base64|hex decode|eval\(|document\.cookie|<script>|javascript:)\b/i,
+    reason: "adversarial-code-injection"
   }
 ];
 

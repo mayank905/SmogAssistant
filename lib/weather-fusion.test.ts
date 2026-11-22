@@ -18,6 +18,23 @@ describe("Weather-Air Quality Fusion Engine", () => {
     expect(analysis.synopsis).toContain("Calm winds");
   });
 
+  it("detects Medium Inversion Risk for moderate winds and intermediate AQI", () => {
+    const moderateWeather: WeatherTelemetry = {
+      temperatureC: 16.5,
+      relativeHumidity: 60,
+      windSpeedKmH: 8.5,
+      windDirectionDeg: 270,
+      precipitationMm: 0,
+    };
+
+    const analysis = analyzeThermalInversion(moderateWeather, 160);
+    expect(analysis.riskLevel).toBe("Medium");
+    expect(analysis.dispersionScore).toBeGreaterThanOrEqual(30);
+    expect(analysis.dispersionScore).toBeLessThan(60);
+    expect(analysis.synopsis).toContain("Moderate Stagnation");
+    expect(analysis.meteorologicalDriver).toBe("Partial Convective Mixing");
+  });
+
   it("detects Low Inversion Risk for windy, warm conditions", () => {
     const freshVentilatedWeather: WeatherTelemetry = {
       temperatureC: 26.0,

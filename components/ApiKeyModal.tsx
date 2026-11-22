@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Key, Sparkles, MapPin, CheckCircle2, AlertCircle, Eye, EyeOff, X, ExternalLink, RefreshCw } from "lucide-react";
 import { ApiKeysState } from "@/types/auth";
 
@@ -33,6 +33,17 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
     keysState.isWaqiValid ? { valid: true, message: "WAQI Live Station Feed Active" } : null
   );
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   // Verify Gemini Key
@@ -55,7 +66,7 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
           isWaqiValid: waqiStatus?.valid ?? keysState.isWaqiValid,
         });
       }
-    } catch (err: any) {
+    } catch {
       setGeminiStatus({ valid: false, message: "Verification failed. Check network connection." });
     } finally {
       setIsVerifyingGemini(false);
@@ -82,7 +93,7 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
           isWaqiValid: data.waqi.valid,
         });
       }
-    } catch (err: any) {
+    } catch {
       setWaqiStatus({ valid: false, message: "Verification failed. Check network connection." });
     } finally {
       setIsVerifyingWaqi(false);
@@ -100,28 +111,35 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+    <div 
+      className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="api-key-modal-title"
+      aria-describedby="api-key-modal-desc"
+    >
       <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[92vh] overflow-y-auto shadow-2xl border border-slate-200">
         {/* Modal Header */}
         <div className="sticky top-0 bg-white/95 backdrop-blur px-6 py-4 border-b border-slate-100 flex items-center justify-between z-10">
           <div className="flex items-center space-x-2.5">
             <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl">
-              <Key className="w-5 h-5" />
+              <Key className="w-5 h-5" aria-hidden="true" />
             </div>
             <div>
-              <h3 className="font-bold text-slate-900 text-lg">
+              <h3 id="api-key-modal-title" className="font-bold text-slate-900 text-lg">
                 API Authentication & Live Feature Unlock
               </h3>
-              <p className="text-xs text-slate-500">
+              <p id="api-key-modal-desc" className="text-xs text-slate-500">
                 Authenticate your API keys to unlock real-time GenAI and geospatial telemetry
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
+            aria-label="Close API configuration modal"
             className="p-2 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100 transition-colors"
           >
-            <X className="w-5 h-5" />
+            <X className="w-5 h-5" aria-hidden="true" />
           </button>
         </div>
 
@@ -138,7 +156,7 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
                 <div className="p-1.5 bg-indigo-50 text-indigo-600 rounded-lg">
-                  <Sparkles className="w-4 h-4" />
+                  <Sparkles className="w-4 h-4" aria-hidden="true" />
                 </div>
                 <div>
                   <h4 className="font-bold text-slate-900 text-sm">
@@ -153,12 +171,12 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
               {geminiStatus ? (
                 geminiStatus.valid ? (
                   <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
-                    <CheckCircle2 className="w-3.5 h-3.5 mr-1 text-emerald-600" />
+                    <CheckCircle2 className="w-3.5 h-3.5 mr-1 text-emerald-600" aria-hidden="true" />
                     Verified & Active
                   </span>
                 ) : (
                   <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-rose-100 text-rose-800 border border-rose-300">
-                    <AlertCircle className="w-3.5 h-3.5 mr-1 text-rose-600" />
+                    <AlertCircle className="w-3.5 h-3.5 mr-1 text-rose-600" aria-hidden="true" />
                     Invalid Key
                   </span>
                 )
@@ -176,6 +194,7 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
                   value={geminiKey}
                   onChange={(e) => setGeminiKey(e.target.value)}
                   placeholder="AIzaSy..."
+                  aria-label="Google Gemini API Key"
                   className="w-full px-3.5 py-2.5 pr-20 text-xs font-mono rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-50/50"
                 />
                 <div className="absolute right-2 flex items-center space-x-1">
@@ -184,8 +203,9 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
                     onClick={() => setShowGemini(!showGemini)}
                     className="p-1.5 text-slate-400 hover:text-slate-600 rounded"
                     title={showGemini ? "Hide key" : "Show key"}
+                    aria-label={showGemini ? "Hide key" : "Show key"}
                   >
-                    {showGemini ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    {showGemini ? <EyeOff className="w-4 h-4" aria-hidden="true" /> : <Eye className="w-4 h-4" aria-hidden="true" />}
                   </button>
                   <button
                     type="button"
@@ -193,7 +213,7 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
                     disabled={isVerifyingGemini || !geminiKey.trim()}
                     className="px-2.5 py-1 text-xs font-bold rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white disabled:opacity-50 transition-colors shadow-xs"
                   >
-                    {isVerifyingGemini ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : "Verify"}
+                    {isVerifyingGemini ? <RefreshCw className="w-3.5 h-3.5 animate-spin" aria-hidden="true" /> : "Verify"}
                   </button>
                 </div>
               </div>
@@ -212,7 +232,7 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
                   rel="noopener noreferrer"
                   className="inline-flex items-center text-indigo-600 hover:underline font-medium"
                 >
-                  Get Free Key <ExternalLink className="w-3 h-3 ml-1" />
+                  Get Free Key <ExternalLink className="w-3 h-3 ml-1" aria-hidden="true" />
                 </a>
               </div>
             </div>
@@ -223,7 +243,7 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
                 <div className="p-1.5 bg-emerald-50 text-emerald-600 rounded-lg">
-                  <MapPin className="w-4 h-4" />
+                  <MapPin className="w-4 h-4" aria-hidden="true" />
                 </div>
                 <div>
                   <h4 className="font-bold text-slate-900 text-sm">
@@ -238,12 +258,12 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
               {waqiStatus ? (
                 waqiStatus.valid ? (
                   <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
-                    <CheckCircle2 className="w-3.5 h-3.5 mr-1 text-emerald-600" />
+                    <CheckCircle2 className="w-3.5 h-3.5 mr-1 text-emerald-600" aria-hidden="true" />
                     Verified & Active
                   </span>
                 ) : (
                   <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-rose-100 text-rose-800 border border-rose-300">
-                    <AlertCircle className="w-3.5 h-3.5 mr-1 text-rose-600" />
+                    <AlertCircle className="w-3.5 h-3.5 mr-1 text-rose-600" aria-hidden="true" />
                     Invalid Token
                   </span>
                 )
@@ -261,6 +281,7 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
                   value={waqiToken}
                   onChange={(e) => setWaqiToken(e.target.value)}
                   placeholder="e.g. 5a1b3c9d7..."
+                  aria-label="WAQI API Token"
                   className="w-full px-3.5 py-2.5 pr-20 text-xs font-mono rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-slate-50/50"
                 />
                 <div className="absolute right-2 flex items-center space-x-1">
@@ -269,8 +290,9 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
                     onClick={() => setShowWaqi(!showWaqi)}
                     className="p-1.5 text-slate-400 hover:text-slate-600 rounded"
                     title={showWaqi ? "Hide token" : "Show token"}
+                    aria-label={showWaqi ? "Hide token" : "Show token"}
                   >
-                    {showWaqi ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    {showWaqi ? <EyeOff className="w-4 h-4" aria-hidden="true" /> : <Eye className="w-4 h-4" aria-hidden="true" />}
                   </button>
                   <button
                     type="button"
@@ -278,7 +300,7 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
                     disabled={isVerifyingWaqi || !waqiToken.trim()}
                     className="px-2.5 py-1 text-xs font-bold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white disabled:opacity-50 transition-colors shadow-xs"
                   >
-                    {isVerifyingWaqi ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : "Verify"}
+                    {isVerifyingWaqi ? <RefreshCw className="w-3.5 h-3.5 animate-spin" aria-hidden="true" /> : "Verify"}
                   </button>
                 </div>
               </div>
@@ -297,7 +319,7 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
                   rel="noopener noreferrer"
                   className="inline-flex items-center text-emerald-600 hover:underline font-medium"
                 >
-                  Get Free Token <ExternalLink className="w-3 h-3 ml-1" />
+                  Get Free Token <ExternalLink className="w-3 h-3 ml-1" aria-hidden="true" />
                 </a>
               </div>
             </div>

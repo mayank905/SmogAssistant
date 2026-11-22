@@ -132,6 +132,19 @@ export const HouseholdScheduleManager: React.FC<HouseholdScheduleManagerProps> =
     }
   }, []);
 
+  // Escape key listener for accessible modal dismissal
+  useEffect(() => {
+    if (!isMemberModalOpen && !isScheduleModalOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setIsMemberModalOpen(false);
+        setIsScheduleModalOpen(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isMemberModalOpen, isScheduleModalOpen]);
+
   // 2. Persist to localStorage whenever members change after initial load
   const persistMembers = (updated: HouseholdMember[]) => {
     setMembers(updated);
@@ -624,19 +637,25 @@ export const HouseholdScheduleManager: React.FC<HouseholdScheduleManagerProps> =
 
       {/* --- MODAL: Add / Edit Member --- */}
       {isMemberModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs">
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="household-member-modal-title"
+        >
           <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-7 shadow-2xl border border-slate-100 space-y-5 animate-in fade-in duration-200">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h4 className="text-lg font-black text-slate-900 flex items-center space-x-2">
-                <HeartPulse className="w-5 h-5 text-indigo-600" />
+              <h4 id="household-member-modal-title" className="text-lg font-black text-slate-900 flex items-center space-x-2">
+                <HeartPulse className="w-5 h-5 text-indigo-600" aria-hidden="true" />
                 <span>{editingMember ? "Edit Household Member" : "Add New Family Member"}</span>
               </h4>
               <button
                 type="button"
                 onClick={() => setIsMemberModalOpen(false)}
+                aria-label="Close family member modal"
                 className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100"
               >
-                <X className="w-5 h-5" />
+                <X className="w-5 h-5" aria-hidden="true" />
               </button>
             </div>
 
@@ -796,11 +815,16 @@ export const HouseholdScheduleManager: React.FC<HouseholdScheduleManagerProps> =
 
       {/* --- MODAL: Add / Edit Schedule Item --- */}
       {isScheduleModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs">
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="household-schedule-modal-title"
+        >
           <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-7 shadow-2xl border border-slate-100 space-y-5 animate-in fade-in duration-200">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h4 className="text-lg font-black text-slate-900 flex items-center space-x-2">
-                <Clock className="w-5 h-5 text-indigo-600" />
+              <h4 id="household-schedule-modal-title" className="text-lg font-black text-slate-900 flex items-center space-x-2">
+                <Clock className="w-5 h-5 text-indigo-600" aria-hidden="true" />
                 <span>
                   {editingScheduleItem?.item ? "Edit Schedule Routine" : "Add Daily Routine"}
                 </span>
@@ -808,9 +832,10 @@ export const HouseholdScheduleManager: React.FC<HouseholdScheduleManagerProps> =
               <button
                 type="button"
                 onClick={() => setIsScheduleModalOpen(false)}
+                aria-label="Close schedule routine modal"
                 className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100"
               >
-                <X className="w-5 h-5" />
+                <X className="w-5 h-5" aria-hidden="true" />
               </button>
             </div>
 

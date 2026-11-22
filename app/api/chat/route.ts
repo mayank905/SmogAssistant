@@ -9,13 +9,32 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { query, telemetry = SCENARIO_PRESETS[0].telemetry, context = DEFAULT_USER_CONTEXT, apiKey } = body;
 
-    const clientKey = request.headers.get("x-gemini-key") || apiKey;
-
     if (!query || typeof query !== "string") {
       return NextResponse.json({ error: "Query string is required" }, { status: 400 });
     }
 
-    const result = await queryCopilotWithGuardrails(query, telemetry, context, clientKey);
+    const sanitizedQuery = query.replace(/\0/g, "").trim();
+    if (sanitizedQuery.length === 0) {
+      return NextResponse.json({ error: "Query cannot be empty" }, { status: 400 });
+    }
+
+    if (sanitizedQuery.length > 1000) {
+      return NextResponse.json(
+        { error: "Query exceeds maximum allowed limit of 1000 characters." },
+        { status: 400 }
+      );
+    }
+
+    // Defensive validation for clientKey
+    let clientKey = request.headers.get("x-gemini-key") || apiKey;
+    if (clientKey) {
+      if (typeof clientKey !== "string" || clientKey.length > 256 || !/^[A-Za-z0-9_-]+$/.test(clientKey.trim())) {
+        return NextResponse.json({ error: "Malformed Gemini API Key provided." }, { status: 400 });
+      }
+      clientKey = clientKey.trim();
+    }
+
+    const result = await queryCopilotWithGuardrails(sanitizedQuery, telemetry, context, clientKey);
     return NextResponse.json({ 
       response: result.response,
       refused: result.refused,
@@ -24,10 +43,11 @@ export async function POST(request: NextRequest) {
       executionTimeMs: result.executionTimeMs,
       attempts: result.attempts,
     });
-  } catch (error: any) {
-    console.error("Copilot chat query error:", error);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Internal processing error";
+    console.error("Copilot chat query error:", message);
     return NextResponse.json(
-      { error: "Failed to generate copilot response", details: error?.message },
+      { error: "Failed to generate copilot response", details: message },
       { status: 500 }
     );
   }

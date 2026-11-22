@@ -8,6 +8,7 @@ interface CacheEntry<T> {
 }
 
 const CACHE_TTL_MS = 15 * 60 * 1000; // 15 minutes
+const MAX_CACHE_ENTRIES = 500; // Maximum items in memory to guarantee bounded footprint
 const memoryCache = new Map<string, CacheEntry<unknown>>();
 
 function getFromCache<T>(key: string): T | null {
@@ -17,14 +18,37 @@ function getFromCache<T>(key: string): T | null {
     memoryCache.delete(key);
     return null;
   }
+  // LRU Refresh: re-insert so it becomes the most recently accessed
+  memoryCache.delete(key);
+  memoryCache.set(key, entry);
   return entry.data;
 }
 
 function setInCache<T>(key: string, data: T, ttlMs: number = CACHE_TTL_MS): void {
+  // If key already exists, delete first to refresh its LRU position
+  if (memoryCache.has(key)) {
+    memoryCache.delete(key);
+  } else if (memoryCache.size >= MAX_CACHE_ENTRIES) {
+    // Evict least-recently used entry (first entry in Map insertion order)
+    const oldestKey = memoryCache.keys().next().value;
+    if (oldestKey) {
+      memoryCache.delete(oldestKey);
+    }
+  }
+
   memoryCache.set(key, {
     data,
     expiresAt: Date.now() + ttlMs,
   });
+}
+
+interface RawGeocodingItem {
+  id: number;
+  name: string;
+  latitude: number;
+  longitude: number;
+  country?: string;
+  admin1?: string;
 }
 
 export interface GeocodingResult {
@@ -53,7 +77,7 @@ export async function searchCities(query: string): Promise<GeocodingResult[]> {
     if (!res.ok) throw new Error(`Geocoding failed with status: ${res.status}`);
     
     const data = await res.json();
-    const results: GeocodingResult[] = (data.results || []).map((item: any) => ({
+    const results: GeocodingResult[] = (data.results || []).map((item: RawGeocodingItem) => ({
       id: item.id,
       name: item.name,
       latitude: item.latitude,

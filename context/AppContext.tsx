@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { AirQualityTelemetry } from "@/types/aqi";
-import { UserContextProfile, SavedProfile, DEFAULT_USER_CONTEXT, INITIAL_SAVED_PROFILES } from "@/types/context";
+import { UserContextProfile, SavedProfile, DEFAULT_USER_CONTEXT, INITIAL_SAVED_PROFILES, CommuteMode } from "@/types/context";
 import { AIRecommendationResponse } from "@/types/recommendations";
 import { ApiKeysState } from "@/types/auth";
 import { 
@@ -11,10 +11,10 @@ import {
   DEFAULT_HOUSEHOLD_ADVICE, 
   HouseholdAdviceResponse,
   ScheduleShift,
+  DayScheduleItem,
 } from "@/types/household";
 import { SCENARIO_PRESETS } from "@/lib/api/scenario-presets";
 import { generateDeterministicRecommendations } from "@/lib/ai/heuristic-fallback";
-import { generateHouseholdAdvice } from "@/lib/ai/multi-model-client";
 
 interface AppContextType {
   isMounted: boolean;
@@ -45,7 +45,7 @@ interface AppContextType {
   deleteSavedProfile: (id: string) => void;
   updateHouseholdMembers: (updated: HouseholdMember[]) => void;
   adoptHouseholdShift: (memberId: string, shift: ScheduleShift) => void;
-  updateMemberScheduleFromSimulator: (memberId: string, updatedSchedule: any[]) => void;
+  updateMemberScheduleFromSimulator: (memberId: string, updatedSchedule: DayScheduleItem[]) => void;
   refreshRecommendations: (curTelemetry?: AirQualityTelemetry, curContext?: UserContextProfile, curGeminiKey?: string) => Promise<void>;
   refreshHouseholdAdviceAction: (curTelemetry?: AirQualityTelemetry, curMembers?: HouseholdMember[], curGeminiKey?: string) => Promise<void>;
 }
@@ -190,8 +190,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
   ) => {
     setIsHouseholdLoading(true);
     try {
-      const advice = await generateHouseholdAdvice(curTelemetry, curMembers, curGeminiKey);
-      setHouseholdAdvice(advice);
+      const res = await fetch("/api/recommendations", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(curGeminiKey ? { "x-gemini-key": curGeminiKey } : {}),
+        },
+        body: JSON.stringify({
+          action: "household",
+          telemetry: curTelemetry,
+          members: curMembers,
+        }),
+      });
+
+      if (res.ok) {
+        const advice = await res.json();
+        setHouseholdAdvice(advice);
+      } else {
+        setHouseholdAdvice(DEFAULT_HOUSEHOLD_ADVICE);
+      }
     } catch (err) {
       console.warn("Falling back to deterministic household advice:", err);
       setHouseholdAdvice(DEFAULT_HOUSEHOLD_ADVICE);
@@ -284,7 +301,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             return {
               ...item,
               time: shift.proposedTime,
-              commuteMode: (shift.suggestedMode as any) || item.commuteMode,
+              commuteMode: (shift.suggestedMode as CommuteMode) || item.commuteMode,
             };
           }
           return item;
@@ -300,7 +317,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     refreshHouseholdAdviceAction(telemetry, updated, keysState.geminiKey);
   };
 
-  const updateMemberScheduleFromSimulator = (memberId: string, updatedSchedule: any[]) => {
+  const updateMemberScheduleFromSimulator = (memberId: string, updatedSchedule: DayScheduleItem[]) => {
     const updated = householdMembers.map((m) => {
       if (m.id !== memberId) return m;
       return {

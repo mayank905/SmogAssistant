@@ -30,6 +30,20 @@ describe("AQI Breakpoints & CPCB Classification", () => {
     expect(getCpcbCategory(sub)).toBe("Severe");
   });
 
+  it("handles extreme CPCB overflow (>500 AQI) gracefully up to safety clamp", () => {
+    // 700 ug/m3 is beyond standard 500 ug/m3 breakpoint table
+    const overflowSub = calculatePm25SubIndex(700);
+    expect(overflowSub).toBeGreaterThan(500);
+    expect(overflowSub).toBeLessThanOrEqual(999);
+    expect(getCpcbCategory(overflowSub)).toBe("Severe");
+
+    // Extreme PM10 overflow (800 ug/m3)
+    const pm10Overflow = calculatePm10SubIndex(800);
+    expect(pm10Overflow).toBeGreaterThan(500);
+    expect(pm10Overflow).toBeLessThanOrEqual(999);
+    expect(getCpcbCategory(pm10Overflow)).toBe("Severe");
+  });
+
   it("correctly calculates PM10 sub-index", () => {
     // 175 ug/m3 falls in 100.1 - 250 -> 101 - 200
     const sub = calculatePm10SubIndex(175);
