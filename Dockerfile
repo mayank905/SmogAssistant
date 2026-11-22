@@ -6,12 +6,13 @@
 FROM node:20-alpine AS base
 WORKDIR /app
 RUN apk add --no-cache libc6-compat
-ENV NODE_ENV=production
 
-# 2. Dependencies Stage
+# 2. Dependencies Stage (Install all dependencies including TypeScript for build)
 FROM base AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
+# Explicitly ensure development dependencies like typescript and tailwindcss are installed
+ENV NODE_ENV=development
 RUN npm ci
 
 # 3. Builder Stage
