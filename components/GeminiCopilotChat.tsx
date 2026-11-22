@@ -17,6 +17,8 @@ interface Message {
   sender: "user" | "copilot";
   text: string;
   timestamp: string;
+  modelUsed?: string;
+  refused?: boolean;
 }
 
 const SAMPLE_QUERIES = [
@@ -79,6 +81,8 @@ export const GeminiCopilotChat: React.FC<GeminiCopilotChatProps> = ({
             sender: "copilot",
             text: data.response || "No response received.",
             timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+            modelUsed: data.modelUsed,
+            refused: data.refused,
           },
         ]);
       } else {
@@ -122,7 +126,7 @@ export const GeminiCopilotChat: React.FC<GeminiCopilotChatProps> = ({
               {isGeminiValid ? (
                 <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-100 text-indigo-800 border border-indigo-200">
                   <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 mr-1 animate-pulse" />
-                  Gemini 1.5 Flash Connected
+                  Gemini 3.x/2.5 Waterfall Connected
                 </span>
               ) : (
                 <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-100 text-amber-800">
@@ -173,13 +177,28 @@ export const GeminiCopilotChat: React.FC<GeminiCopilotChatProps> = ({
               }`}
             >
               <p>{m.text}</p>
-              <span
-                className={`block text-[10px] mt-1.5 ${
-                  m.sender === "user" ? "text-indigo-200 text-right" : "text-slate-400"
-                }`}
-              >
-                {m.timestamp}
-              </span>
+              <div className="flex items-center justify-between gap-2 mt-2 pt-1 border-t border-slate-100/60">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {m.refused && (
+                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                      <ShieldAlert className="w-2.5 h-2.5 mr-0.5 text-amber-700" />
+                      Domain Guard Active (Air Quality Only)
+                    </span>
+                  )}
+                  {m.modelUsed && (
+                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-slate-100 text-slate-600">
+                      Tier: {m.modelUsed}
+                    </span>
+                  )}
+                </div>
+                <span
+                  className={`text-[10px] ${
+                    m.sender === "user" ? "text-indigo-200" : "text-slate-400"
+                  }`}
+                >
+                  {m.timestamp}
+                </span>
+              </div>
             </div>
           </div>
         ))}

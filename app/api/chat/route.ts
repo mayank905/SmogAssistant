@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { queryGeminiCopilot } from "@/lib/ai/gemini-client";
+import { queryCopilotWithGuardrails } from "@/lib/ai/multi-model-client";
 import { AirQualityTelemetry } from "@/types/aqi";
 import { UserContextProfile, DEFAULT_USER_CONTEXT } from "@/types/context";
 import { SCENARIO_PRESETS } from "@/lib/api/scenario-presets";
@@ -15,8 +15,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Query string is required" }, { status: 400 });
     }
 
-    const responseText = await queryGeminiCopilot(query, telemetry, context, clientKey);
-    return NextResponse.json({ response: responseText });
+    const result = await queryCopilotWithGuardrails(query, telemetry, context, clientKey);
+    return NextResponse.json({ 
+      response: result.response,
+      refused: result.refused,
+      modelUsed: result.modelUsed,
+      category: result.category,
+      executionTimeMs: result.executionTimeMs,
+      attempts: result.attempts,
+    });
   } catch (error: any) {
     console.error("Copilot chat query error:", error);
     return NextResponse.json(

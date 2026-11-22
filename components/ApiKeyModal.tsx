@@ -27,7 +27,7 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
   const [isVerifyingWaqi, setIsVerifyingWaqi] = useState(false);
 
   const [geminiStatus, setGeminiStatus] = useState<{ valid: boolean; message: string } | null>(
-    keysState.isGeminiValid ? { valid: true, message: "Gemini 1.5 Flash Active" } : null
+    keysState.isGeminiValid ? { valid: true, message: "Gemini 3.x / 2.5 Multi-Model Active" } : null
   );
   const [waqiStatus, setWaqiStatus] = useState<{ valid: boolean; message: string } | null>(
     keysState.isWaqiValid ? { valid: true, message: "WAQI Live Station Feed Active" } : null
@@ -145,7 +145,7 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
                     Google Gemini API Key
                   </h4>
                   <p className="text-xs text-slate-500">
-                    Powers Gemini 1.5 Flash Copilot reasoning and custom chat
+                    Powers Gemini 3.x / 2.5 Multi-Model Active Reasoning and Copilot chat
                   </p>
                 </div>
               </div>

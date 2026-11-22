@@ -64,7 +64,8 @@ export interface AIRecommendationResponse {
   vulnerableAlerts: VulnerableAlert[];
   meta: {
     generatedAt: string;
-    engine: "gemini-genai" | "deterministic-fallback";
+    engine: "gemini-genai" | "deterministic-fallback" | string;
     executionTimeMs?: number;
+    modelUsed?: string;
   };
 }

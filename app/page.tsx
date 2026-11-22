@@ -15,13 +15,24 @@ import { SustainableTransitComparator } from "@/components/SustainableTransitCom
 import { VulnerableAlertsBanner } from "@/components/VulnerableAlertsBanner";
 import { ContextProfiler } from "@/components/ContextProfiler";
 import { ApiKeyModal } from "@/components/ApiKeyModal";
+import { HouseholdScheduleManager } from "@/components/HouseholdScheduleManager";
+import { HouseholdAdviceCard } from "@/components/HouseholdAdviceCard";
+import { DecisionSimulator } from "@/components/DecisionSimulator";
 
 import { AirQualityTelemetry } from "@/types/aqi";
 import { UserContextProfile, SavedProfile, DEFAULT_USER_CONTEXT, INITIAL_SAVED_PROFILES } from "@/types/context";
 import { AIRecommendationResponse } from "@/types/recommendations";
 import { ApiKeysState } from "@/types/auth";
+import { 
+  HouseholdMember, 
+  INITIAL_HOUSEHOLD_MEMBERS, 
+  DEFAULT_HOUSEHOLD_ADVICE, 
+  HouseholdAdviceResponse,
+  ScheduleShift,
+} from "@/types/household";
 import { SCENARIO_PRESETS } from "@/lib/api/scenario-presets";
 import { generateDeterministicRecommendations } from "@/lib/ai/heuristic-fallback";
+import { generateHouseholdAdvice } from "@/lib/ai/multi-model-client";
 import { Settings, Sparkles, RefreshCw, Cpu, ShieldCheck, Key, CheckCircle2, Bookmark, ChevronDown } from "lucide-react";
 
 export default function Home() {
@@ -46,6 +57,11 @@ export default function Home() {
   const [isProfilerOpen, setIsProfilerOpen] = useState(false);
   const [isKeyModalOpen, setIsKeyModalOpen] = useState(false);
   const [hasNotificationsEnabled, setHasNotificationsEnabled] = useState(false);
+
+  // Household Profiler & Dual Advice State
+  const [householdMembers, setHouseholdMembers] = useState<HouseholdMember[]>(INITIAL_HOUSEHOLD_MEMBERS);
+  const [householdAdvice, setHouseholdAdvice] = useState<HouseholdAdviceResponse>(DEFAULT_HOUSEHOLD_ADVICE);
+  const [isHouseholdLoading, setIsHouseholdLoading] = useState(false);
 
   // Mount effect: safely load localStorage and notification permissions without SSR mismatch
   useEffect(() => {
@@ -87,6 +103,19 @@ export default function Home() {
       }
     } catch (e) {
       console.warn("Could not load stored profiles:", e);
+    }
+
+    // 4. Load household members from localStorage
+    try {
+      const storedMembers = localStorage.getItem("smogassistant_household_members");
+      if (storedMembers) {
+        const parsedMembers = JSON.parse(storedMembers);
+        if (Array.isArray(parsedMembers) && parsedMembers.length > 0) {
+          setHouseholdMembers(parsedMembers);
+        }
+      }
+    } catch (e) {
+      console.warn("Could not load stored household members:", e);
     }
   }, []);
 
@@ -142,6 +171,74 @@ export default function Home() {
     }
   };
 
+  // Refresh household multi-member advice
+  const refreshHouseholdAdvice = async (
+    curTelemetry: AirQualityTelemetry,
+    curMembers: HouseholdMember[] = householdMembers,
+    curGeminiKey: string = keysState.geminiKey
+  ) => {
+    setIsHouseholdLoading(true);
+    try {
+      const advice = await generateHouseholdAdvice(curTelemetry, curMembers, curGeminiKey);
+      setHouseholdAdvice(advice);
+    } catch (err) {
+      console.warn("Falling back to deterministic household advice:", err);
+      setHouseholdAdvice(DEFAULT_HOUSEHOLD_ADVICE);
+    } finally {
+      setIsHouseholdLoading(false);
+    }
+  };
+
+  const handleHouseholdMembersChange = (updated: HouseholdMember[]) => {
+    setHouseholdMembers(updated);
+    refreshHouseholdAdvice(telemetry, updated, keysState.geminiKey);
+  };
+
+  const handleAdoptHouseholdShift = (memberId: string, shift: ScheduleShift) => {
+    const updated = householdMembers.map((m) => {
+      if (m.id !== memberId) return m;
+      return {
+        ...m,
+        schedule: m.schedule.map((item) => {
+          if (
+            item.activity.toLowerCase().includes(shift.activity.toLowerCase()) ||
+            shift.activity.toLowerCase().includes(item.activity.toLowerCase())
+          ) {
+            return {
+              ...item,
+              time: shift.proposedTime,
+              commuteMode: (shift.suggestedMode as any) || item.commuteMode,
+            };
+          }
+          return item;
+        }),
+      };
+    });
+    setHouseholdMembers(updated);
+    try {
+      localStorage.setItem("smogassistant_household_members", JSON.stringify(updated));
+    } catch (e) {
+      console.warn("Failed to persist updated member schedule:", e);
+    }
+  };
+
+  const handleUpdateMemberScheduleFromSimulator = (memberId: string, updatedSchedule: any[]) => {
+    const updated = householdMembers.map((m) => {
+      if (m.id !== memberId) return m;
+      return {
+        ...m,
+        schedule: updatedSchedule,
+      };
+    });
+    setHouseholdMembers(updated);
+    try {
+      localStorage.setItem("smogassistant_household_members", JSON.stringify(updated));
+    } catch (e) {
+      console.warn("Failed to persist updated member schedule from simulator:", e);
+    }
+    refreshHouseholdAdvice(telemetry, updated, keysState.geminiKey);
+  };
+
   // Update API Keys
   const handleUpdateKeys = (newKeys: { geminiKey: string; waqiToken: string; isGeminiValid: boolean; isWaqiValid: boolean }) => {
     setKeysState(newKeys);
@@ -156,6 +253,7 @@ export default function Home() {
 
     // Refresh recommendations with new key if valid
     refreshRecommendations(telemetry, context, newKeys.geminiKey);
+    refreshHouseholdAdvice(telemetry, householdMembers, newKeys.geminiKey);
   };
 
   // Scenario Selection
@@ -168,6 +266,7 @@ export default function Home() {
       if (preset) {
         setTelemetry(preset.telemetry);
         await refreshRecommendations(preset.telemetry, context);
+        await refreshHouseholdAdvice(preset.telemetry, householdMembers);
       }
     } else {
       // Live API mode for current location / default city
@@ -183,6 +282,7 @@ export default function Home() {
           if (data.telemetry) {
             setTelemetry(data.telemetry);
             await refreshRecommendations(data.telemetry, context);
+            await refreshHouseholdAdvice(data.telemetry, householdMembers);
           }
         }
       } catch (err) {
@@ -210,6 +310,7 @@ export default function Home() {
           const updatedContext = { ...context, city: name };
           setContext(updatedContext);
           await refreshRecommendations(data.telemetry, updatedContext);
+          await refreshHouseholdAdvice(data.telemetry, householdMembers);
         }
       }
     } catch (err) {
@@ -338,7 +439,7 @@ export default function Home() {
               <span className="text-slate-700 font-medium">
                 Live Features Activated:{" "}
                 {keysState.isGeminiValid && (
-                  <strong className="text-indigo-800 mr-2">✓ Gemini 1.5 Flash Copilot</strong>
+                  <strong className="text-indigo-800 mr-2">✓ Gemini 3.x/2.5 Multi-Model Waterfall Active</strong>
                 )}
                 {keysState.isWaqiValid && (
                   <strong className="text-emerald-800">✓ AQICN Map Heatmap Tiles & Sensors</strong>
@@ -384,6 +485,29 @@ export default function Home() {
           cityName={telemetry.location.city}
         />
 
+        {/* Task 1: Synchronized Dual-Level Household Strategy & Personalized Precautions */}
+        <HouseholdAdviceCard
+          advice={householdAdvice}
+          currentAqi={telemetry.overallAqi}
+          isLoading={isHouseholdLoading}
+          onRefreshAdvice={() => refreshHouseholdAdvice(telemetry, householdMembers, keysState.geminiKey)}
+          onApplyShift={handleAdoptHouseholdShift}
+        />
+
+        {/* Task 1: Multi-Member Household Health & Schedule Profiler */}
+        <HouseholdScheduleManager
+          initialMembers={householdMembers}
+          onMembersChange={handleHouseholdMembersChange}
+        />
+
+        {/* Task 3: Interactive Decision & Climate Consequence Simulator */}
+        <DecisionSimulator
+          currentAqi={telemetry.overallAqi}
+          ambientPm25={telemetry.pollutants.pm25.value}
+          householdMembers={householdMembers}
+          onUpdateMemberSchedule={handleUpdateMemberScheduleFromSimulator}
+        />
+
         {/* Interactive GenAI Copilot Advisory (Unlocked with Gemini Key) */}
         <GeminiCopilotChat
           telemetry={telemetry}
@@ -416,7 +540,7 @@ export default function Home() {
               Recommendation Engine:{" "}
               <strong className="text-slate-800">
                 {recommendations.meta.engine === "gemini-genai" 
-                  ? "Google Gemini 1.5 Flash (GenAI Live)" 
+                  ? "Google Gemini 3.x / 2.5 Multi-Model Waterfall (GenAI Live)" 
                   : "Deterministic Heuristic Engine (100% Offline-Resilient)"}
               </strong>
             </span>
