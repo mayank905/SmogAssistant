@@ -14,18 +14,39 @@ import { isAirQualityDomainQuery, GUARDRAILS_SYSTEM_PROMPT, AIR_QUALITY_REFUSAL_
 import { generateDeterministicRecommendations } from "./heuristic-fallback";
 
 /**
+ * Comprehensive 3-Series Active Gemini Models
+ * Prioritizes high-efficiency Flash, balanced Flash, and ultra-fast Flash-Lite tiers in strict sequence:
+ * 1. gemini-3.8-flash
+ * 2. gemini-3.6-flash
+ * 3. gemini-3.5-flash
+ * 4. gemini-3.5-flash-lite
+ * 5. gemini-3.1-flash-lite
+ */
+export const GEMINI_3_SERIES_MODELS = [
+  "gemini-3.8-flash",
+  "gemini-3.6-flash",
+  "gemini-3.5-flash",
+  "gemini-3.5-flash-lite",
+  "gemini-3.1-flash-lite",
+] as const;
+
+/**
  * Modern Active Model Waterfall
- * Prioritizes next-gen high-efficiency Gemini models, falling back to earlier generations,
- * and finally to local deterministic reasoning engines.
+ * Prioritizes all active 3-series models under fallback criteria:
+ * gemini-3.8-flash -> gemini-3.6-flash -> gemini-3.5-flash -> gemini-3.5-flash-lite -> gemini-3.1-flash-lite,
+ * cascading down through 2.x and 1.5 generations, and finally to local deterministic reasoning engines.
  */
 export const MODEL_WATERFALL = [
-  "gemini-3.0-flash",
+  ...GEMINI_3_SERIES_MODELS,
   "gemini-2.5-flash",
-  "gemini-2.0-flash",
   "gemini-1.5-flash",
   "gemini-1.5-pro",
   "deterministic-fallback",
 ] as const;
+
+export function is3SeriesModel(modelName: string): boolean {
+  return /gemini-3(\.|\b)/i.test(modelName);
+}
 
 export type ModelTier = typeof MODEL_WATERFALL[number];
 

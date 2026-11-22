@@ -439,7 +439,9 @@ export default function Home() {
               <span className="text-slate-700 font-medium">
                 Live Features Activated:{" "}
                 {keysState.isGeminiValid && (
-                  <strong className="text-indigo-800 mr-2">✓ Gemini 3.x/2.5 Multi-Model Waterfall Active</strong>
+                  <strong className="text-indigo-800 mr-2" title="Waterfall sequence: gemini-3.8-flash → gemini-3.6-flash → gemini-3.5-flash → gemini-3.5-flash-lite → gemini-3.1-flash-lite">
+                    ✓ Gemini 3-Series Waterfall Active (3.8 → 3.6 → 3.5 → Lite)
+                  </strong>
                 )}
                 {keysState.isWaqiValid && (
                   <strong className="text-emerald-800">✓ AQICN Map Heatmap Tiles & Sensors</strong>
@@ -540,7 +542,7 @@ export default function Home() {
               Recommendation Engine:{" "}
               <strong className="text-slate-800">
                 {recommendations.meta.engine === "gemini-genai" 
-                  ? "Google Gemini 3.x / 2.5 Multi-Model Waterfall (GenAI Live)" 
+                  ? "Google Gemini 3-Series Multi-Model Waterfall (3.8 Flash → 3.6 Flash → 3.5 Flash → 3.5 Flash-Lite → 3.1 Flash-Lite)" 
                   : "Deterministic Heuristic Engine (100% Offline-Resilient)"}
               </strong>
             </span>

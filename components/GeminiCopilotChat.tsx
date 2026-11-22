@@ -124,9 +124,12 @@ export const GeminiCopilotChat: React.FC<GeminiCopilotChatProps> = ({
                 Interactive GenAI Copilot Advisory
               </h3>
               {isGeminiValid ? (
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-100 text-indigo-800 border border-indigo-200">
+                <span 
+                  className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-100 text-indigo-800 border border-indigo-200"
+                  title="Multi-Model Waterfall Cascade: gemini-3.8-flash → gemini-3.6-flash → gemini-3.5-flash → gemini-3.5-flash-lite → gemini-3.1-flash-lite → gemini-2.5-flash → gemini-1.5-flash"
+                >
                   <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 mr-1 animate-pulse" />
-                  Gemini 3.x/2.5 Waterfall Connected
+                  Gemini 3-Series Waterfall (3.8 → 3.6 → 3.5 → Lite)
                 </span>
               ) : (
                 <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-100 text-amber-800">

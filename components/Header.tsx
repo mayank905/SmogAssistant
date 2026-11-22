@@ -76,7 +76,7 @@ export const Header: React.FC<HeaderProps> = ({
               <div className="flex items-center space-x-1 ml-1.5">
                 <span 
                   className={`w-2 h-2 rounded-full ${isGeminiValid ? "bg-emerald-500 animate-pulse" : "bg-slate-300"}`} 
-                  title={isGeminiValid ? "Gemini 3.x/2.5 Active Waterfall" : "Gemini Not Set"}
+                  title={isGeminiValid ? "Gemini 3-Series Multi-Model Waterfall (3.8 Flash → 3.6 Flash → 3.5 Flash → 3.5 Flash-Lite → 3.1 Flash-Lite)" : "Gemini Not Set"}
                 />
                 <span 
                   className={`w-2 h-2 rounded-full ${isWaqiValid ? "bg-emerald-500 animate-pulse" : "bg-slate-300"}`} 

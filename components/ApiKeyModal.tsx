@@ -145,7 +145,7 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
                     Google Gemini API Key
                   </h4>
                   <p className="text-xs text-slate-500">
-                    Powers Gemini 3.x / 2.5 Multi-Model Active Reasoning and Copilot chat
+                    Powers Gemini 3-Series Multi-Model Waterfall (3.8 Flash → 3.6 Flash → 3.5 Flash → 3.5 Flash-Lite → 3.1 Flash-Lite)
                   </p>
                 </div>
               </div>
