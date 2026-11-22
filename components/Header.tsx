@@ -1,7 +1,21 @@
 "use client";
 
 import React from "react";
-import { Wind, ShieldAlert, Sparkles, Bell, Key, User, CheckCircle2 } from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { 
+  Wind, 
+  ShieldAlert, 
+  Sparkles, 
+  Bell, 
+  Key, 
+  User, 
+  LayoutDashboard, 
+  Map, 
+  Users, 
+  Sliders, 
+  Leaf 
+} from "lucide-react";
 
 interface HeaderProps {
   onOpenNotifications?: () => void;
@@ -22,11 +36,23 @@ export const Header: React.FC<HeaderProps> = ({
   activeProfileName,
   onOpenProfiler,
 }) => {
+  const pathname = usePathname();
+
+  const navItems = [
+    { href: "/", label: "Dashboard", icon: LayoutDashboard },
+    { href: "/map", label: "Live Map", icon: Map },
+    { href: "/household", label: "Household Defense", icon: Users },
+    { href: "/simulator", label: "Consequence Simulator", icon: Sliders },
+    { href: "/copilot", label: "AI Copilot", icon: Sparkles },
+    { href: "/mitigation", label: "Indoor & Transit", icon: Leaf },
+  ];
+
   return (
-    <header className="border-b border-slate-200 bg-white/95 backdrop-blur sticky top-0 z-40 transition-all">
+    <header className="border-b border-slate-200 bg-white/95 backdrop-blur sticky top-0 z-40 transition-all shadow-xs">
+      {/* Top Header Bar */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-        <div className="flex items-center space-x-3">
-          <div className="p-2 bg-gradient-to-br from-indigo-600 to-emerald-500 rounded-xl shadow-sm text-white">
+        <Link href="/" className="flex items-center space-x-3 group">
+          <div className="p-2 bg-gradient-to-br from-indigo-600 to-emerald-500 rounded-xl shadow-sm text-white group-hover:scale-105 transition-transform">
             <Wind className="w-6 h-6 animate-pulse" />
           </div>
           <div>
@@ -43,18 +69,18 @@ export const Header: React.FC<HeaderProps> = ({
               Urban Air Quality & Smog Defense System
             </p>
           </div>
-        </div>
+        </Link>
 
         <div className="flex items-center space-x-2 sm:space-x-3">
           {/* Active Profile Pill */}
           {activeProfileName && (
             <button
               onClick={onOpenProfiler}
-              className="hidden lg:inline-flex items-center px-2.5 py-1.5 rounded-xl border border-indigo-200 bg-indigo-50/70 hover:bg-indigo-100 text-indigo-900 text-xs font-semibold transition-colors"
+              className="hidden md:inline-flex items-center px-2.5 py-1.5 rounded-xl border border-indigo-200 bg-indigo-50/70 hover:bg-indigo-100 text-indigo-900 text-xs font-semibold transition-colors"
               title="Click to manage personal profiles"
             >
               <User className="w-3.5 h-3.5 mr-1 text-indigo-600" />
-              <span className="max-w-[140px] truncate">{activeProfileName}</span>
+              <span className="max-w-[120px] lg:max-w-[160px] truncate">{activeProfileName}</span>
             </button>
           )}
 
@@ -105,9 +131,38 @@ export const Header: React.FC<HeaderProps> = ({
 
           <div className="flex items-center space-x-1 px-2.5 py-1 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs font-medium">
             <ShieldAlert className="w-3.5 h-3.5 text-amber-600 mr-1" />
-            <span className="hidden md:inline">Winter Smog Season Mode</span>
-            <span className="md:hidden">Smog Mode</span>
+            <span className="hidden lg:inline">Winter Smog Season Mode</span>
+            <span className="lg:hidden">Smog Mode</span>
           </div>
+        </div>
+      </div>
+
+      {/* Persistent Multi-Page Navigation Bar */}
+      <div className="border-t border-slate-100 bg-slate-50/70">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <nav className="flex items-center space-x-1 sm:space-x-2 py-2 overflow-x-auto no-scrollbar scroll-smooth">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = pathname === item.href;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`inline-flex items-center space-x-2 px-3 py-1.5 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap transition-all ${
+                    isActive
+                      ? "bg-white text-indigo-700 shadow-xs border border-indigo-200"
+                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/80 border border-transparent"
+                  }`}
+                >
+                  <Icon className={`w-4 h-4 ${isActive ? "text-indigo-600" : "text-slate-400"}`} />
+                  <span>{item.label}</span>
+                  {isActive && (
+                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 ml-1 animate-pulse" />
+                  )}
+                </Link>
+              );
+            })}
+          </nav>
         </div>
       </div>
     </header>
