@@ -422,6 +422,17 @@ export function generateClimateAlternative(
     };
   }).map((altItem) => evaluateScheduleItem(altItem, ambientPm25));
 
+  return buildSimulationResult(baselineSchedule, alternativeSchedule);
+}
+
+/**
+ * Builds a complete SimulationResult by evaluating metrics and deltas
+ * between a baseline schedule and an alternative schedule.
+ */
+export function buildSimulationResult(
+  baselineSchedule: ScheduleItemSimulation[],
+  alternativeSchedule: ScheduleItemSimulation[]
+): SimulationResult {
   // Compute aggregate metrics
   const baselineMetrics: SimulationMetrics = {
     totalInhaledPm25Ug: Math.round(baselineSchedule.reduce((acc, it) => acc + (it.inhaledPm25Ug || 0), 0) * 100) / 100,

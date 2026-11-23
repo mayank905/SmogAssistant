@@ -3,7 +3,11 @@
 import React, { useState, useMemo } from "react";
 import {
   ScheduleItemSimulation,
+  SimulationMetrics,
+  SimulationResult,
   generateClimateAlternative,
+  evaluateScheduleItem,
+  estimatePm25FromAqi,
   DEFAULT_SIMULATION_SCHEDULE,
   PRESET_SCHEDULES,
   isInversionWindow,
@@ -42,6 +46,8 @@ export interface DecisionSimulatorProps {
   onAdoptAlternative?: (updatedSchedule: ScheduleItemSimulation[]) => void;
   householdMembers?: HouseholdMember[];
   onUpdateMemberSchedule?: (memberId: string, updatedSchedule: DayScheduleItem[]) => void;
+  geminiKey?: string;
+  isGeminiValid?: boolean;
   className?: string;
 }
 
@@ -52,6 +58,8 @@ export const DecisionSimulator: React.FC<DecisionSimulatorProps> = ({
   onAdoptAlternative,
   householdMembers = [],
   onUpdateMemberSchedule,
+  geminiKey,
+  isGeminiValid,
   className = "",
 }) => {
   const [schedule, setSchedule] = useState<ScheduleItemSimulation[]>(
@@ -61,6 +69,11 @@ export const DecisionSimulator: React.FC<DecisionSimulatorProps> = ({
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
   const [isAdopted, setIsAdopted] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<"side-by-side" | "tweaker">("side-by-side");
+
+  // Simulation On-Demand State
+  const [simulationResult, setSimulationResult] = useState<SimulationResult | null>(null);
+  const [isSimulating, setIsSimulating] = useState<boolean>(false);
+  const [simulationEngine, setSimulationEngine] = useState<string | null>(null);
 
   // Converter from DayScheduleItem to ScheduleItemSimulation
   const convertMemberScheduleToSim = (member: HouseholdMember): ScheduleItemSimulation[] => {
@@ -146,10 +159,67 @@ export const DecisionSimulator: React.FC<DecisionSimulatorProps> = ({
   const [newIntensity, setNewIntensity] = useState<ActivityIntensity>("moderate");
   const [newHasMask, setNewHasMask] = useState<boolean>(false);
 
-  // Run simulation reactively whenever schedule or AQI/PM2.5 updates
-  const simulation = useMemo(() => {
-    return generateClimateAlternative(schedule, currentAqi, ambientPm25);
-  }, [schedule, currentAqi, ambientPm25]);
+  const ambientPm25Val = typeof ambientPm25 === "number" ? ambientPm25 : estimatePm25FromAqi(currentAqi);
+
+  // Evaluate baseline schedule reactively using physical formulas
+  const baselineSchedule = useMemo(() => {
+    return schedule.map((item) => evaluateScheduleItem(item, ambientPm25Val));
+  }, [schedule, ambientPm25Val]);
+
+  // Aggregate baseline metrics reactively
+  const baselineMetrics: SimulationMetrics = useMemo(() => {
+    return {
+      totalInhaledPm25Ug: Math.round(baselineSchedule.reduce((acc, it) => acc + (it.inhaledPm25Ug || 0), 0) * 100) / 100,
+      totalCo2Kg: Math.round(baselineSchedule.reduce((acc, it) => acc + (it.co2EmissionsKg || 0), 0) * 100) / 100,
+      inversionConflictsCount: baselineSchedule.filter((it) => it.isInversionConflict).length,
+    };
+  }, [baselineSchedule]);
+
+  // Handle on-demand simulation triggered by the user
+  const handleSimulate = async () => {
+    setIsSimulating(true);
+    setIsAdopted(false);
+
+    try {
+      if (isGeminiValid && geminiKey) {
+        // Attempt AI generation via API
+        const res = await fetch("/api/simulator", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-gemini-key": geminiKey,
+          },
+          body: JSON.stringify({
+            schedule: baselineSchedule,
+            currentAqi,
+            ambientPm25: ambientPm25Val,
+          }),
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.alternativeSchedule && data.baselineMetrics && data.alternativeMetrics) {
+            setSimulationResult(data);
+            setSimulationEngine(data.engineUsed || "gemini-ai");
+            setIsSimulating(false);
+            return;
+          }
+        }
+      }
+
+      // Fallback to precomputed deterministic physics alternative
+      const fallbackResult = generateClimateAlternative(schedule, currentAqi, ambientPm25Val);
+      setSimulationResult(fallbackResult);
+      setSimulationEngine("deterministic-physics");
+    } catch (err: unknown) {
+      console.warn("[Simulator] Simulation request failed, using physics fallback:", err);
+      const fallbackResult = generateClimateAlternative(schedule, currentAqi, ambientPm25Val);
+      setSimulationResult(fallbackResult);
+      setSimulationEngine("deterministic-physics");
+    } finally {
+      setIsSimulating(false);
+    }
+  };
 
   // Handle Preset Switching
   const handleSelectPreset = (presetKey: string) => {
@@ -158,6 +228,8 @@ export const DecisionSimulator: React.FC<DecisionSimulatorProps> = ({
       setSelectedPreset(presetKey);
       setSelectedMemberId(null);
       setIsAdopted(false);
+      setSimulationResult(null);
+      setSimulationEngine(null);
     }
   };
 
@@ -168,12 +240,14 @@ export const DecisionSimulator: React.FC<DecisionSimulatorProps> = ({
     );
     setSelectedPreset("custom");
     setIsAdopted(false);
+    setSimulationResult(null);
   };
 
   const handleRemoveItem = (id: string) => {
     setSchedule((prev) => prev.filter((item) => item.id !== id));
     setSelectedPreset("custom");
     setIsAdopted(false);
+    setSimulationResult(null);
   };
 
   const handleAddItem = (e: React.FormEvent) => {
@@ -196,22 +270,25 @@ export const DecisionSimulator: React.FC<DecisionSimulatorProps> = ({
     setShowAddForm(false);
     setSelectedPreset("custom");
     setIsAdopted(false);
+    setSimulationResult(null);
   };
 
   const handleAdopt = () => {
+    if (!simulationResult) return;
     setIsAdopted(true);
     if (selectedMemberId && onUpdateMemberSchedule) {
       const activeMember = householdMembers.find((m) => m.id === selectedMemberId);
-      const convertedItems = convertSimToDayItems(simulation.alternativeSchedule, activeMember?.schedule);
+      const convertedItems = convertSimToDayItems(simulationResult.alternativeSchedule, activeMember?.schedule);
       onUpdateMemberSchedule(selectedMemberId, convertedItems);
     }
     if (onAdoptAlternative) {
-      onAdoptAlternative(simulation.alternativeSchedule);
+      onAdoptAlternative(simulationResult.alternativeSchedule);
     }
   };
 
   // Helper colors and gauges
-  const { baselineMetrics, alternativeMetrics, deltas } = simulation;
+  const alternativeMetrics = simulationResult?.alternativeMetrics;
+  const deltas = simulationResult?.deltas;
 
   const getInhalationRiskColor = (ug: number) => {
     if (ug <= 25) return { bg: "bg-emerald-500", text: "text-emerald-700", badge: "bg-emerald-100 text-emerald-800", label: "Low Dose" };
@@ -227,9 +304,9 @@ export const DecisionSimulator: React.FC<DecisionSimulatorProps> = ({
   };
 
   const baselinePmRisk = getInhalationRiskColor(baselineMetrics.totalInhaledPm25Ug);
-  const altPmRisk = getInhalationRiskColor(alternativeMetrics.totalInhaledPm25Ug);
+  const altPmRisk = alternativeMetrics ? getInhalationRiskColor(alternativeMetrics.totalInhaledPm25Ug) : null;
   const baselineCo2Risk = getCo2Color(baselineMetrics.totalCo2Kg);
-  const altCo2Risk = getCo2Color(alternativeMetrics.totalCo2Kg);
+  const altCo2Risk = alternativeMetrics ? getCo2Color(alternativeMetrics.totalCo2Kg) : null;
 
   return (
     <div className={`bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-8 space-y-8 ${className}`}>
@@ -343,7 +420,7 @@ export const DecisionSimulator: React.FC<DecisionSimulatorProps> = ({
               {baselineMetrics.totalInhaledPm25Ug.toFixed(1)}
             </span>
             <span className="text-xs font-bold text-slate-400">µg / day</span>
-            {deltas.pm25SavedPct > 0 && (
+            {deltas && deltas.pm25SavedPct > 0 && (
               <span className="ml-auto inline-flex items-center text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200">
                 <TrendingDown className="w-3.5 h-3.5 mr-0.5" />
                 -{deltas.pm25SavedPct}% with Alt
@@ -355,7 +432,11 @@ export const DecisionSimulator: React.FC<DecisionSimulatorProps> = ({
           <div className="mt-3 space-y-1.5">
             <div className="flex justify-between text-[11px] font-medium text-slate-500">
               <span>Baseline: {baselineMetrics.totalInhaledPm25Ug.toFixed(1)} µg</span>
-              <span className="text-emerald-600 font-bold">Optimized: {alternativeMetrics.totalInhaledPm25Ug.toFixed(1)} µg</span>
+              {alternativeMetrics ? (
+                <span className="text-emerald-600 font-bold">Optimized: {alternativeMetrics.totalInhaledPm25Ug.toFixed(1)} µg</span>
+              ) : (
+                <span className="text-slate-400 italic">Optimized: Awaiting simulation</span>
+              )}
             </div>
             <div className="w-full h-2.5 bg-slate-200 rounded-full overflow-hidden flex">
               <div
@@ -386,7 +467,7 @@ export const DecisionSimulator: React.FC<DecisionSimulatorProps> = ({
               {baselineMetrics.totalCo2Kg.toFixed(2)}
             </span>
             <span className="text-xs font-bold text-slate-400">kg CO₂</span>
-            {deltas.co2AbatedKg > 0 && (
+            {deltas && deltas.co2AbatedKg > 0 && (
               <span className="ml-auto inline-flex items-center text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200">
                 <Leaf className="w-3.5 h-3.5 mr-0.5" />
                 -{deltas.co2AbatedKg.toFixed(1)} kg abated
@@ -398,7 +479,11 @@ export const DecisionSimulator: React.FC<DecisionSimulatorProps> = ({
           <div className="mt-3 space-y-1.5">
             <div className="flex justify-between text-[11px] font-medium text-slate-500">
               <span>Baseline: {baselineMetrics.totalCo2Kg.toFixed(2)} kg</span>
-              <span className="text-emerald-600 font-bold">Optimized: {alternativeMetrics.totalCo2Kg.toFixed(2)} kg</span>
+              {alternativeMetrics ? (
+                <span className="text-emerald-600 font-bold">Optimized: {alternativeMetrics.totalCo2Kg.toFixed(2)} kg</span>
+              ) : (
+                <span className="text-slate-400 italic">Optimized: Awaiting simulation</span>
+              )}
             </div>
             <div className="w-full h-2.5 bg-slate-200 rounded-full overflow-hidden flex">
               <div
@@ -437,7 +522,7 @@ export const DecisionSimulator: React.FC<DecisionSimulatorProps> = ({
               {baselineMetrics.inversionConflictsCount}
             </span>
             <span className="text-xs font-bold text-slate-400">conflicts</span>
-            {deltas.inversionWindowsAvoided > 0 && (
+            {deltas && deltas.inversionWindowsAvoided > 0 && (
               <span className="ml-auto inline-flex items-center text-xs font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-lg border border-indigo-200">
                 <ShieldCheck className="w-3.5 h-3.5 mr-0.5" />
                 {deltas.inversionWindowsAvoided} Avoided
@@ -616,16 +701,36 @@ export const DecisionSimulator: React.FC<DecisionSimulatorProps> = ({
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Baseline Current Schedule */}
             <div className="p-5 sm:p-6 rounded-2xl border-2 border-slate-200 bg-slate-50/50 space-y-4">
-              <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-200 pb-3 gap-2">
                 <div className="flex items-center space-x-2">
                   <div className="w-2.5 h-2.5 rounded-full bg-rose-500" />
                   <h3 className="text-base font-extrabold text-slate-900">
                     Baseline Plan (Current Routine)
                   </h3>
+                  <span className="text-xs font-bold text-slate-500">
+                    • {schedule.length} Activities
+                  </span>
                 </div>
-                <span className="text-xs font-bold text-slate-500">
-                  {schedule.length} Activities
-                </span>
+
+                <button
+                  type="button"
+                  onClick={handleSimulate}
+                  disabled={isSimulating}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold text-xs shadow-xs transition-all disabled:opacity-50 active:scale-95 cursor-pointer"
+                  title="Simulate exposure and generate climate-preserving alternative"
+                >
+                  {isSimulating ? (
+                    <>
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      <span>Simulating...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                      <span>Simulate &amp; Generate Alternatives</span>
+                    </>
+                  )}
+                </button>
               </div>
 
               {/* Baseline Summary Metrics */}
@@ -652,7 +757,7 @@ export const DecisionSimulator: React.FC<DecisionSimulatorProps> = ({
 
               {/* Baseline Schedule List */}
               <div className="space-y-2.5 max-h-[460px] overflow-y-auto pr-1">
-                {simulation.baselineSchedule.map((item) => (
+                {baselineSchedule.map((item) => (
                   <div
                     key={item.id}
                     className="p-3.5 rounded-xl bg-white border border-slate-200 text-xs space-y-2"
@@ -705,153 +810,200 @@ export const DecisionSimulator: React.FC<DecisionSimulatorProps> = ({
                   </h3>
                 </div>
                 <span className="text-xs font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-md">
-                  AI & Physics Optimized
+                  {simulationEngine?.startsWith("gemini")
+                    ? "Gemini AI Optimized"
+                    : simulationResult
+                      ? "Physics Optimized"
+                      : "Awaiting Simulation"}
                 </span>
               </div>
 
-              {/* Alternative Summary Metrics */}
-              <div className="grid grid-cols-3 gap-2 p-3 bg-white rounded-xl border border-emerald-200 text-center shadow-2xs">
-                <div>
-                  <span className="text-[10px] uppercase font-bold text-slate-400 block">PM2.5 Inhaled</span>
-                  <span className="text-base font-extrabold text-emerald-700">
-                    {alternativeMetrics.totalInhaledPm25Ug.toFixed(1)} <span className="text-[10px] text-slate-400">µg</span>
-                  </span>
-                  {deltas.pm25SavedPct > 0 && (
-                    <span className="text-[10px] font-bold text-emerald-600 block">
-                      -{deltas.pm25SavedPct}% Saved
-                    </span>
-                  )}
-                </div>
-                <div>
-                  <span className="text-[10px] uppercase font-bold text-slate-400 block">CO₂ Emitted</span>
-                  <span className="text-base font-extrabold text-emerald-700">
-                    {alternativeMetrics.totalCo2Kg.toFixed(2)} <span className="text-[10px] text-slate-400">kg</span>
-                  </span>
-                  {deltas.co2AbatedKg > 0 && (
-                    <span className="text-[10px] font-bold text-emerald-600 block">
-                      -{deltas.co2AbatedKg.toFixed(1)} kg Abated
-                    </span>
-                  )}
-                </div>
-                <div>
-                  <span className="text-[10px] uppercase font-bold text-slate-400 block">Inversion Traps</span>
-                  <span className="text-base font-extrabold text-emerald-700">
-                    {alternativeMetrics.inversionConflictsCount}
-                  </span>
-                  {deltas.inversionWindowsAvoided > 0 && (
-                    <span className="text-[10px] font-bold text-emerald-600 block">
-                      {deltas.inversionWindowsAvoided} Neutralized
-                    </span>
-                  )}
-                </div>
-              </div>
+              {simulationResult && alternativeMetrics && deltas ? (
+                <>
+                  {/* Alternative Summary Metrics */}
+                  <div className="grid grid-cols-3 gap-2 p-3 bg-white rounded-xl border border-emerald-200 text-center shadow-2xs">
+                    <div>
+                      <span className="text-[10px] uppercase font-bold text-slate-400 block">PM2.5 Inhaled</span>
+                      <span className="text-base font-extrabold text-emerald-700">
+                        {alternativeMetrics.totalInhaledPm25Ug.toFixed(1)} <span className="text-[10px] text-slate-400">µg</span>
+                      </span>
+                      {deltas.pm25SavedPct > 0 && (
+                        <span className="text-[10px] font-bold text-emerald-600 block">
+                          -{deltas.pm25SavedPct}% Saved
+                        </span>
+                      )}
+                    </div>
+                    <div>
+                      <span className="text-[10px] uppercase font-bold text-slate-400 block">CO₂ Emitted</span>
+                      <span className="text-base font-extrabold text-emerald-700">
+                        {alternativeMetrics.totalCo2Kg.toFixed(2)} <span className="text-[10px] text-slate-400">kg</span>
+                      </span>
+                      {deltas.co2AbatedKg > 0 && (
+                        <span className="text-[10px] font-bold text-emerald-600 block">
+                          -{deltas.co2AbatedKg.toFixed(1)} kg Abated
+                        </span>
+                      )}
+                    </div>
+                    <div>
+                      <span className="text-[10px] uppercase font-bold text-slate-400 block">Inversion Traps</span>
+                      <span className="text-base font-extrabold text-emerald-700">
+                        {alternativeMetrics.inversionConflictsCount}
+                      </span>
+                      {deltas.inversionWindowsAvoided > 0 && (
+                        <span className="text-[10px] font-bold text-emerald-600 block">
+                          {deltas.inversionWindowsAvoided} Neutralized
+                        </span>
+                      )}
+                    </div>
+                  </div>
 
-              {/* Alternative Schedule List */}
-              <div className="space-y-2.5 max-h-[460px] overflow-y-auto pr-1">
-                {simulation.alternativeSchedule.map((item, idx) => {
-                  const baselineMatch = simulation.baselineSchedule[idx];
-                  const isModified =
-                    baselineMatch &&
-                    (baselineMatch.startTime !== item.startTime ||
-                      baselineMatch.commuteMode !== item.commuteMode ||
-                      baselineMatch.locationType !== item.locationType ||
-                      baselineMatch.hasMask !== item.hasMask);
+                  {/* Alternative Schedule List */}
+                  <div className="space-y-2.5 max-h-[460px] overflow-y-auto pr-1">
+                    {simulationResult.alternativeSchedule.map((item, idx) => {
+                      const baselineMatch = baselineSchedule[idx];
+                      const isModified =
+                        baselineMatch &&
+                        (baselineMatch.startTime !== item.startTime ||
+                          baselineMatch.commuteMode !== item.commuteMode ||
+                          baselineMatch.locationType !== item.locationType ||
+                          baselineMatch.hasMask !== item.hasMask);
 
-                  return (
-                    <div
-                      key={item.id}
-                      className={`p-3.5 rounded-xl border text-xs space-y-2 transition-all ${
-                        isModified
-                          ? "bg-white border-emerald-300 shadow-xs ring-1 ring-emerald-200"
-                          : "bg-white/80 border-slate-200"
-                      }`}
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <div>
-                          <div className="font-extrabold text-emerald-950 flex items-center gap-1.5">
-                            {item.activity}
-                            {isModified && (
-                              <span className="text-[9px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800 px-1.5 py-0.2 rounded-sm">
-                                Optimized
+                      return (
+                        <div
+                          key={item.id}
+                          className={`p-3.5 rounded-xl border text-xs space-y-2 transition-all ${
+                            isModified
+                              ? "bg-white border-emerald-300 shadow-xs ring-1 ring-emerald-200"
+                              : "bg-white/80 border-slate-200"
+                          }`}
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div>
+                              <div className="font-extrabold text-emerald-950 flex items-center gap-1.5">
+                                {item.activity}
+                                {isModified && (
+                                  <span className="text-[9px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800 px-1.5 py-0.2 rounded-sm">
+                                    Optimized
+                                  </span>
+                                )}
+                              </div>
+                              {item.notes && (
+                                <p className="text-[11px] text-emerald-700 font-medium mt-0.5">
+                                  {item.notes}
+                                </p>
+                              )}
+                            </div>
+                            <span className="font-bold text-emerald-800 bg-emerald-100/70 px-2 py-0.5 rounded-md flex-shrink-0">
+                              {item.startTime} ({item.durationMinutes}m)
+                            </span>
+                          </div>
+
+                          <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-500 pt-1 border-t border-slate-100">
+                            <span className="capitalize font-semibold text-slate-700">
+                              {item.locationType}
+                              {item.commuteMode && ` • ${item.commuteMode.replace("-", " ")}`}
+                            </span>
+                            {item.hasMask && (
+                              <span className="text-emerald-700 font-bold bg-emerald-50 px-1.5 py-0.2 rounded-sm">
+                                ✓ N95 Equipped
                               </span>
                             )}
+                            <div className="ml-auto font-extrabold text-emerald-800">
+                              {(item.inhaledPm25Ug || 0).toFixed(1)} µg PM2.5
+                              {(item.co2EmissionsKg || 0) > 0 && ` | ${(item.co2EmissionsKg || 0).toFixed(2)} kg CO₂`}
+                            </div>
                           </div>
-                          {item.notes && (
-                            <p className="text-[11px] text-emerald-700 font-medium mt-0.5">
-                              {item.notes}
-                            </p>
-                          )}
                         </div>
-                        <span className="font-bold text-emerald-800 bg-emerald-100/70 px-2 py-0.5 rounded-md flex-shrink-0">
-                          {item.startTime} ({item.durationMinutes}m)
-                        </span>
-                      </div>
-
-                      <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-500 pt-1 border-t border-slate-100">
-                        <span className="capitalize font-semibold text-slate-700">
-                          {item.locationType}
-                          {item.commuteMode && ` • ${item.commuteMode.replace("-", " ")}`}
-                        </span>
-                        {item.hasMask && (
-                          <span className="text-emerald-700 font-bold bg-emerald-50 px-1.5 py-0.2 rounded-sm">
-                            ✓ N95 Equipped
-                          </span>
-                        )}
-                        <div className="ml-auto font-extrabold text-emerald-800">
-                          {(item.inhaledPm25Ug || 0).toFixed(1)} µg PM2.5
-                          {(item.co2EmissionsKg || 0) > 0 && ` | ${(item.co2EmissionsKg || 0).toFixed(2)} kg CO₂`}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+                      );
+                    })}
+                  </div>
+                </>
+              ) : (
+                <div className="p-8 rounded-2xl border-2 border-dashed border-emerald-200/90 bg-white/60 flex flex-col items-center justify-center text-center space-y-4 min-h-[380px]">
+                  <div className="p-4 rounded-2xl bg-emerald-100/70 text-emerald-700">
+                    <Sparkles className="w-8 h-8 text-emerald-600" />
+                  </div>
+                  <div className="max-w-xs space-y-1.5">
+                    <h4 className="font-extrabold text-slate-900 text-sm">
+                      Alternative Plan Not Generated Yet
+                    </h4>
+                    <p className="text-xs text-slate-500 leading-relaxed">
+                      Click <strong className="text-indigo-600 font-bold">&quot;Simulate &amp; Generate Alternatives&quot;</strong> near the Baseline Plan to compute optimal route shifts, N95 protection, and transit decarbonization.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleSimulate}
+                    disabled={isSimulating}
+                    className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                  >
+                    {isSimulating ? (
+                      <>
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                        <span>Simulating...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-3.5 h-3.5" />
+                        <span>Simulate Now</span>
+                      </>
+                    )}
+                  </button>
+                  <span className="text-[10px] text-slate-400">
+                    {isGeminiValid && geminiKey
+                      ? "⚡ Powered by Gemini 3.6-Flash & Microclimate Physics"
+                      : "🔬 Powered by Precomputed Microclimate Physics Model"}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
 
           {/* Key Impact Highlights & Adoption Action Banner */}
-          <div className="p-6 rounded-2xl bg-gradient-to-r from-emerald-900 via-indigo-950 to-slate-900 text-white shadow-md flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="space-y-2">
-              <div className="flex items-center space-x-2">
-                <ShieldCheck className="w-5 h-5 text-emerald-400" />
-                <h4 className="font-black text-base tracking-tight text-white">
-                  Climate & Health Net Optimization
-                </h4>
+          {simulationResult && (
+            <div className="p-6 rounded-2xl bg-gradient-to-r from-emerald-900 via-indigo-950 to-slate-900 text-white shadow-md flex flex-col md:flex-row items-center justify-between gap-6 animate-fadeIn">
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <ShieldCheck className="w-5 h-5 text-emerald-400" />
+                  <h4 className="font-black text-base tracking-tight text-white">
+                    Climate &amp; Health Net Optimization
+                  </h4>
+                </div>
+                <ul className="text-xs text-slate-300 space-y-1">
+                  {simulationResult.impactHighlights.map((hl, idx) => (
+                    <li key={idx} className="flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 flex-shrink-0" />
+                      <span>{hl}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
-              <ul className="text-xs text-slate-300 space-y-1">
-                {simulation.impactHighlights.map((hl, idx) => (
-                  <li key={idx} className="flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 flex-shrink-0" />
-                    <span>{hl}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
 
-            <div className="flex-shrink-0 w-full md:w-auto">
-              <button
-                onClick={handleAdopt}
-                disabled={isAdopted}
-                className={`w-full md:w-auto px-6 py-3.5 rounded-xl font-black text-xs uppercase tracking-wider flex items-center justify-center space-x-2 transition-all shadow-lg ${
-                  isAdopted
-                    ? "bg-emerald-500 text-white cursor-default"
-                    : "bg-emerald-400 hover:bg-emerald-300 text-slate-950 hover:scale-[1.02] active:scale-[0.98]"
-                }`}
-              >
-                {isAdopted ? (
-                  <>
-                    <CheckCircle2 className="w-4 h-4 text-white" />
-                    <span>✓ Climate Alternative Adopted!</span>
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-4 h-4 text-slate-950" />
-                    <span>Adopt Climate-Preserving Alternative</span>
-                  </>
-                )}
-              </button>
+              <div className="flex-shrink-0 w-full md:w-auto">
+                <button
+                  onClick={handleAdopt}
+                  disabled={isAdopted}
+                  className={`w-full md:w-auto px-6 py-3.5 rounded-xl font-black text-xs uppercase tracking-wider flex items-center justify-center space-x-2 transition-all shadow-lg cursor-pointer ${
+                    isAdopted
+                      ? "bg-emerald-500 text-white cursor-default"
+                      : "bg-emerald-400 hover:bg-emerald-300 text-slate-950 hover:scale-[1.02] active:scale-[0.98]"
+                  }`}
+                >
+                  {isAdopted ? (
+                    <>
+                      <CheckCircle2 className="w-4 h-4 text-white" />
+                      <span>✓ Climate Alternative Adopted!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4 text-slate-950" />
+                      <span>Adopt Climate-Preserving Alternative</span>
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       )}
 

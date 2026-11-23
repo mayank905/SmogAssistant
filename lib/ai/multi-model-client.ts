@@ -12,6 +12,11 @@ import {
 } from "@/types/household";
 import { isAirQualityDomainQuery, GUARDRAILS_SYSTEM_PROMPT, AIR_QUALITY_REFUSAL_MESSAGE } from "./domain-guardrails";
 import { generateDeterministicRecommendations } from "./heuristic-fallback";
+import { 
+  ScheduleItemSimulation, 
+  evaluateScheduleItem, 
+  generateClimateAlternative 
+} from "@/lib/decision-simulator";
 
 /**
  * Comprehensive Active Gemini Models (Starting from 3.6-Flash downwards)
@@ -766,5 +771,105 @@ Return a JSON object conforming STRICTLY to the following structure:
       engine: "deterministic-fallback",
       executionTimeMs: Date.now() - startTime,
     },
+  };
+}
+
+/**
+ * Generates an AI-optimized Climate-Preserving Alternative schedule using Gemini Waterfall (starting at 3.6-flash).
+ * If API key is missing or fails, seamlessly cascades to deterministic physics alternative.
+ */
+export async function generateAiSimulationAlternatives(
+  schedule: ScheduleItemSimulation[],
+  currentAqi: number,
+  ambientPm25: number,
+  overrideApiKey?: string
+): Promise<{
+  alternativeSchedule: ScheduleItemSimulation[];
+  engineUsed: string;
+}> {
+  const apiKey = cleanApiKey(overrideApiKey || process.env.GEMINI_API_KEY);
+
+  // If no Gemini key, return deterministic physics alternative immediately
+  if (!apiKey) {
+    const fallback = generateClimateAlternative(schedule, currentAqi, ambientPm25);
+    return {
+      alternativeSchedule: fallback.alternativeSchedule,
+      engineUsed: "deterministic-physics",
+    };
+  }
+
+  const prompt = `
+You are the Environmental Health & Urban Mobility AI of SmogAssistant.
+Optimize the following daily schedule to protect human respiratory health from fine particulate matter (PM2.5) and reduce transport carbon emissions (CO2).
+
+TELEMETRY & ENVIRONMENTAL CONDITIONS:
+- Current AQI: ${currentAqi}
+- Ambient PM2.5: ${ambientPm25} µg/m³
+- Meteorological Inversion Danger Windows: 05:00 - 08:30 AM & 18:30 - 22:30 PM (stagnant cold air traps vehicle exhaust at ground level).
+
+CURRENT USER SCHEDULE:
+${JSON.stringify(schedule, null, 2)}
+
+OPTIMIZATION GOALS:
+1. Shift vigorous/moderate outdoor activities away from nocturnal thermal inversion windows (05:00-08:30, 18:30-22:30) to midday solar mixing windows (12:30-15:00) or purified indoor spaces.
+2. Upgrade high-emission or high-exposure transit (car-petrol, two-wheeler) to clean/sealed mass transit (metro) or assign N95 mask protection.
+3. Keep the overall number and intent of activities consistent with the user's daily life.
+
+Return a JSON object conforming STRICTLY to this schema:
+{
+  "alternativeSchedule": [
+    {
+      "id": string,
+      "activity": string,
+      "startTime": string,
+      "durationMinutes": number,
+      "locationType": "outdoor" | "transit" | "indoor",
+      "commuteMode": "walking" | "bicycle" | "two-wheeler" | "bus" | "car-petrol" | "car-ev" | "metro",
+      "intensity": "resting" | "light" | "moderate" | "vigorous",
+      "hasMask": boolean,
+      "notes": string
+    }
+  ]
+}
+`;
+
+  const geminiTiers = MODEL_WATERFALL.filter((m) => m !== "deterministic-fallback");
+  const genAI = new GoogleGenerativeAI(apiKey);
+
+  for (const modelTier of geminiTiers) {
+    try {
+      const model = genAI.getGenerativeModel({
+        model: modelTier,
+        generationConfig: {
+          responseMimeType: "application/json",
+          temperature: 0.2,
+          maxOutputTokens: 2048,
+        },
+      });
+
+      const result = await model.generateContent(prompt);
+      const text = result.response.text();
+      const parsed = JSON.parse(text);
+
+      if (parsed && Array.isArray(parsed.alternativeSchedule) && parsed.alternativeSchedule.length > 0) {
+        // Evaluate each item using rigorous physical formulas
+        const evaluated = parsed.alternativeSchedule.map((item: ScheduleItemSimulation) =>
+          evaluateScheduleItem(item, ambientPm25)
+        );
+        return {
+          alternativeSchedule: evaluated,
+          engineUsed: modelTier,
+        };
+      }
+    } catch (err: unknown) {
+      console.warn(`[SmogAssistant Simulator] Tier ${modelTier} alternative generation failed:`, err);
+    }
+  }
+
+  // Fallback to deterministic physics alternative
+  const fallback = generateClimateAlternative(schedule, currentAqi, ambientPm25);
+  return {
+    alternativeSchedule: fallback.alternativeSchedule,
+    engineUsed: "deterministic-physics",
   };
 }

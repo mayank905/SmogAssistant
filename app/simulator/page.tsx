@@ -10,6 +10,7 @@ export default function SimulatorPage() {
     telemetry,
     householdMembers,
     updateMemberScheduleFromSimulator,
+    keysState,
   } = useAppContext();
 
   return (
@@ -54,6 +55,8 @@ export default function SimulatorPage() {
         ambientPm25={telemetry.pollutants.pm25.value}
         householdMembers={householdMembers}
         onUpdateMemberSchedule={updateMemberScheduleFromSimulator}
+        geminiKey={keysState.geminiKey}
+        isGeminiValid={keysState.isGeminiValid}
       />
 
       {/* Scientific Explanations Grid */}
