@@ -6,10 +6,26 @@ import {
 import { AirQualityTelemetry } from "@/types/aqi";
 import { UserContextProfile, DEFAULT_USER_CONTEXT } from "@/types/context";
 import { SCENARIO_PRESETS } from "@/lib/api/scenario-presets";
+import { logger } from "@/lib/utils/logger";
+
+interface RecommendationsBody {
+  telemetry?: AirQualityTelemetry;
+  context?: UserContextProfile;
+  members?: unknown;
+  apiKey?: string;
+  action?: string;
+  includeGeneral?: boolean;
+}
 
 export async function POST(request: NextRequest) {
+  let body: RecommendationsBody;
   try {
-    const body = await request.json();
+    body = (await request.json()) as RecommendationsBody;
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON in request body" }, { status: 400 });
+  }
+
+  try {
     const telemetry: AirQualityTelemetry = body.telemetry || SCENARIO_PRESETS[0].telemetry;
     const context: UserContextProfile = body.context || DEFAULT_USER_CONTEXT;
     
@@ -38,7 +54,7 @@ export async function POST(request: NextRequest) {
 
     // If client specifically requests household advice or only provides members
     if (body.action === "household" || (members && !body.context && !body.includeGeneral)) {
-      const householdAdvice = await generateHouseholdAdvice(telemetry, members || [], clientKey);
+      const householdAdvice = await generateHouseholdAdvice(telemetry, Array.isArray(members) ? members : [], clientKey);
       return NextResponse.json(householdAdvice);
     }
 
@@ -56,7 +72,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(recommendations);
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Internal error";
-    console.error("Recommendations API error:", message);
+    logger.error("Recommendations API error:", message);
     return NextResponse.json(
       { error: "Failed to generate recommendations", details: message },
       { status: 500 }

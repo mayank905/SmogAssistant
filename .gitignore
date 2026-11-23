@@ -24,3 +24,6 @@ build
 # TypeScript
 *.tsbuildinfo
 next-env.d.ts
+
+# Scratch and Prompts
+.scratch/

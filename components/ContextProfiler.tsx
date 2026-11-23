@@ -134,7 +134,7 @@ export const ContextProfiler: React.FC<ContextProfilerProps> = ({
                 Personalized Household Profiles
               </h3>
               <p className="text-xs text-slate-500">
-                Tailor GenAI advice to your family's exact health and commuting reality
+                Tailor GenAI advice to your family&apos;s exact health and commuting reality
               </p>
             </div>
           </div>
@@ -264,7 +264,7 @@ export const ContextProfiler: React.FC<ContextProfilerProps> = ({
             <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200 space-y-2">
               <label className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center justify-between">
                 <span>Personalized Profile Name</span>
-                <span className="text-[11px] font-normal text-slate-500">e.g. Home, Office, Parents' House</span>
+                <span className="text-[11px] font-normal text-slate-500">e.g. Home, Office, Parents&apos; House</span>
               </label>
               <div className="flex items-center gap-2">
                 <input

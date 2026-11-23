@@ -27,6 +27,7 @@ import {
   X,
   ChevronRight,
 } from "lucide-react";
+import { logger } from "@/lib/utils/logger";
 
 const STORAGE_KEY = "smogassistant_household_members";
 
@@ -113,14 +114,14 @@ export const HouseholdScheduleManager: React.FC<HouseholdScheduleManagerProps> =
           const parsed = JSON.parse(stored);
           if (Array.isArray(parsed) && parsed.length > 0) {
             setMembers(parsed);
-            if (!parsed.some((m: HouseholdMember) => m.id === selectedMemberId)) {
-              setSelectedMemberId(parsed[0].id);
-            }
+            setSelectedMemberId((prev) => 
+              !parsed.some((m: HouseholdMember) => m.id === prev) ? parsed[0].id : prev
+            );
           }
         }
       }
     } catch (e) {
-      console.warn("Failed to read household members from localStorage:", e);
+      logger.warn("Failed to read household members from localStorage:", e);
     }
   }, []);
 
@@ -150,16 +151,16 @@ export const HouseholdScheduleManager: React.FC<HouseholdScheduleManagerProps> =
         const timer = setTimeout(() => setSaveStatus(""), 2500);
         return () => clearTimeout(timer);
       } catch (e) {
-        console.warn("Failed to persist household members to localStorage:", e);
+        logger.warn("Failed to persist household members to localStorage:", e);
       }
     }
   };
 
   const handleResetToDefaults = () => {
-    if (window.confirm("Reset household members to standard benchmark defaults (Asthmatic Child, Commuter, Grandparent)?")) {
-      persistMembers(INITIAL_HOUSEHOLD_MEMBERS);
-      setSelectedMemberId(INITIAL_HOUSEHOLD_MEMBERS[0].id);
-    }
+    persistMembers(INITIAL_HOUSEHOLD_MEMBERS);
+    setSelectedMemberId(INITIAL_HOUSEHOLD_MEMBERS[0].id);
+    setSaveStatus("Reset to standard benchmark defaults");
+    setTimeout(() => setSaveStatus(""), 2500);
   };
 
   // --- Member Actions ---
@@ -230,17 +231,18 @@ export const HouseholdScheduleManager: React.FC<HouseholdScheduleManagerProps> =
 
   const handleDeleteMember = (memberId: string) => {
     if (members.length <= 1) {
-      alert("A household must have at least one profile member.");
+      setSaveStatus("A household must have at least one profile member.");
+      setTimeout(() => setSaveStatus(""), 3000);
       return;
     }
     const member = members.find((m) => m.id === memberId);
-    if (window.confirm(`Are you sure you want to remove "${member?.name}" from household profiling?`)) {
-      const updated = members.filter((m) => m.id !== memberId);
-      persistMembers(updated);
-      if (selectedMemberId === memberId) {
-        setSelectedMemberId(updated[0].id);
-      }
+    const updated = members.filter((m) => m.id !== memberId);
+    persistMembers(updated);
+    if (selectedMemberId === memberId) {
+      setSelectedMemberId(updated[0].id);
     }
+    setSaveStatus(`Removed ${member?.name || "member"} from household`);
+    setTimeout(() => setSaveStatus(""), 3000);
   };
 
   // --- Schedule Item Actions ---
@@ -513,7 +515,7 @@ export const HouseholdScheduleManager: React.FC<HouseholdScheduleManagerProps> =
             <div>
               <div className="flex items-center space-x-2">
                 <h4 className="text-lg font-black text-slate-900">
-                  {activeMember.name}'s Daily Route & Schedule
+                  {activeMember.name}&apos;s Daily Route & Schedule
                 </h4>
                 {getRoleBadge(activeMember.role)}
               </div>

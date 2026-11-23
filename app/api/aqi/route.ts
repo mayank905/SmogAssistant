@@ -3,6 +3,7 @@ import { searchCities, fetchLiveAirQuality } from "@/lib/api/open-meteo";
 import { SCENARIO_PRESETS } from "@/lib/api/scenario-presets";
 import { fetchWaqiByCoordinates } from "@/lib/api/waqi";
 import { AirQualityTelemetry } from "@/types/aqi";
+import { logger } from "@/lib/utils/logger";
 
 export async function GET(request: NextRequest) {
   try {
@@ -59,7 +60,7 @@ export async function GET(request: NextRequest) {
           };
         }
       } catch (e) {
-        console.warn("WAQI enrichment skipped:", e);
+        logger.warn("WAQI enrichment skipped:", e);
       }
       return telemetry;
     };
@@ -96,7 +97,7 @@ export async function GET(request: NextRequest) {
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Internal error";
-    console.error("AQI API route error:", message);
+    logger.error("AQI API route error:", message);
     return NextResponse.json(
       { 
         error: "Failed to fetch air quality telemetry", 

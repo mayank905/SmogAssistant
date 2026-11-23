@@ -1,3 +1,5 @@
+import { logger } from "@/lib/utils/logger";
+
 export interface WeatherTelemetry {
   temperatureC: number;
   relativeHumidity: number;
@@ -43,7 +45,7 @@ export async function fetchLiveWeather(
       hourlyForecast,
     };
   } catch (error) {
-    console.warn("Live weather fetch failed, returning winter baseline:", error);
+    logger.warn("Live weather fetch failed, returning winter baseline:", error);
     return {
       temperatureC: 14.0,
       relativeHumidity: 72,

@@ -3,17 +3,24 @@ import { queryCopilotWithGuardrails } from "@/lib/ai/multi-model-client";
 import { AirQualityTelemetry } from "@/types/aqi";
 import { UserContextProfile, DEFAULT_USER_CONTEXT } from "@/types/context";
 import { SCENARIO_PRESETS } from "@/lib/api/scenario-presets";
+import { logger } from "@/lib/utils/logger";
 
 interface ChatRequestBody {
-  query?: string;
+  query?: unknown;
   telemetry?: AirQualityTelemetry;
   context?: UserContextProfile;
   apiKey?: string;
 }
 
 export async function POST(request: NextRequest) {
+  let body: ChatRequestBody;
   try {
-    const body = (await request.json()) as ChatRequestBody;
+    body = (await request.json()) as ChatRequestBody;
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON in request body" }, { status: 400 });
+  }
+
+  try {
     const { query, telemetry = SCENARIO_PRESETS[0].telemetry, context = DEFAULT_USER_CONTEXT, apiKey } = body;
 
     if (!query || typeof query !== "string") {
@@ -55,7 +62,7 @@ export async function POST(request: NextRequest) {
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Internal processing error";
-    console.error("Copilot chat query error:", message);
+    logger.error("Copilot chat query error:", message);
     return NextResponse.json(
       { error: "Failed to generate copilot response", details: message },
       { status: 500 }

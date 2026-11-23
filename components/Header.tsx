@@ -78,6 +78,7 @@ export const Header: React.FC<HeaderProps> = ({
               onClick={onOpenProfiler}
               className="hidden md:inline-flex items-center px-2.5 py-1.5 rounded-xl border border-indigo-200 bg-indigo-50/70 hover:bg-indigo-100 text-indigo-900 text-xs font-semibold transition-colors"
               title="Click to manage personal profiles"
+              aria-label={`Active profile: ${activeProfileName}. Click to manage personal profiles`}
             >
               <User className="w-3.5 h-3.5 mr-1 text-indigo-600" />
               <span className="max-w-[120px] lg:max-w-[160px] truncate">{activeProfileName}</span>
@@ -88,6 +89,7 @@ export const Header: React.FC<HeaderProps> = ({
           {onOpenKeyModal && (
             <button
               onClick={onOpenKeyModal}
+              aria-label="Configure Gemini and WAQI API Keys"
               className={`inline-flex items-center px-2.5 py-1.5 text-xs font-bold rounded-xl border transition-all ${
                 isGeminiValid && isWaqiValid
                   ? "border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100"
@@ -115,6 +117,7 @@ export const Header: React.FC<HeaderProps> = ({
           {onOpenNotifications && (
             <button
               onClick={onOpenNotifications}
+              aria-label={hasNotificationsEnabled ? "Morning briefing notifications are active. Click to toggle" : "Enable daily morning briefing notifications"}
               className={`inline-flex items-center px-2.5 py-1.5 text-xs font-medium rounded-xl border transition-colors ${
                 hasNotificationsEnabled 
                   ? "border-emerald-300 bg-emerald-50 text-emerald-700" 
@@ -140,7 +143,7 @@ export const Header: React.FC<HeaderProps> = ({
       {/* Persistent Multi-Page Navigation Bar */}
       <div className="border-t border-slate-100 bg-slate-50/70">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <nav className="flex items-center space-x-1 sm:space-x-2 py-2 overflow-x-auto no-scrollbar scroll-smooth">
+          <nav aria-label="Main Navigation" className="flex items-center space-x-1 sm:space-x-2 py-2 overflow-x-auto no-scrollbar scroll-smooth">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = pathname === item.href;

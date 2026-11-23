@@ -36,10 +36,12 @@ export const MorningBriefingCard: React.FC<MorningBriefingCardProps> = ({
           }
         });
       } else {
-        alert(`Morning Briefing: Inversion Risk is ${briefing.inversionRisk} for ${cityName}. Best outdoor window: Midday.`);
+        setNotificationSent(true);
+        setTimeout(() => setNotificationSent(false), 4000);
       }
     } else {
-      alert(`Morning Briefing: Inversion Risk is ${briefing.inversionRisk} for ${cityName}. Best outdoor window: Midday.`);
+      setNotificationSent(true);
+      setTimeout(() => setNotificationSent(false), 4000);
     }
   };
 

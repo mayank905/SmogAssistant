@@ -6,10 +6,24 @@ import {
   buildSimulationResult, 
   estimatePm25FromAqi 
 } from "@/lib/decision-simulator";
+import { logger } from "@/lib/utils/logger";
+
+interface SimulatorBody {
+  schedule?: unknown;
+  currentAqi?: unknown;
+  ambientPm25?: unknown;
+  apiKey?: string;
+}
 
 export async function POST(request: NextRequest) {
+  let body: SimulatorBody;
   try {
-    const body = await request.json();
+    body = (await request.json()) as SimulatorBody;
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON in request body" }, { status: 400 });
+  }
+
+  try {
     const { schedule, currentAqi = 280, ambientPm25: customPm25, apiKey } = body;
 
     if (!Array.isArray(schedule) || schedule.length === 0) {
@@ -32,7 +46,7 @@ export async function POST(request: NextRequest) {
     const pm25Val = typeof customPm25 === "number" ? customPm25 : estimatePm25FromAqi(aqiNum);
 
     // Evaluate baseline schedule using physical formulas
-    const evaluatedBaseline = schedule.map((item: ScheduleItemSimulation) =>
+    const evaluatedBaseline = (schedule as ScheduleItemSimulation[]).map((item: ScheduleItemSimulation) =>
       evaluateScheduleItem(item, pm25Val)
     );
 
@@ -52,7 +66,7 @@ export async function POST(request: NextRequest) {
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Internal simulator error";
-    console.error("Simulator API error:", message);
+    logger.error("Simulator API error:", message);
     return NextResponse.json(
       { error: "Failed to generate simulation alternatives", details: message },
       { status: 500 }

@@ -2,6 +2,7 @@
  * WAQI (World Air Quality Index) & AQICN.org API Client
  * Provides ground monitoring station telemetry, token verification, and map tile URLs.
  */
+import { logger } from "@/lib/utils/logger";
 
 export interface WaqiVerificationResult {
   valid: boolean;
@@ -84,7 +85,7 @@ export async function fetchWaqiByCoordinates(
       iaqi: data.data.iaqi,
     };
   } catch (err) {
-    console.warn("Failed to fetch WAQI station data:", err);
+    logger.warn("Failed to fetch WAQI station data:", err);
     return null;
   }
 }

@@ -26,6 +26,9 @@ jobs:
       - name: TypeScript Static Type Checking
         run: npx tsc --noEmit
 
+      - name: Run ESLint Linting
+        run: npm run lint
+
       - name: Run Vitest Unit Tests
         run: npm test
 

@@ -35,6 +35,7 @@ import {
   Info,
   Users,
 } from "lucide-react";
+import { logger } from "@/lib/utils/logger";
 
 export interface DecisionSimulatorProps {
   currentAqi?: number;
@@ -209,7 +210,7 @@ export const DecisionSimulator: React.FC<DecisionSimulatorProps> = ({
       setSimulationResult(fallbackResult);
       setSimulationEngine("deterministic-physics");
     } catch (err: unknown) {
-      console.warn("[Simulator] Simulation request failed, using physics fallback:", err);
+      logger.warn("[Simulator] Simulation request failed, using physics fallback:", err);
       const fallbackResult = generateClimateAlternative(schedule, currentAqi, ambientPm25Val);
       setSimulationResult(fallbackResult);
       setSimulationEngine("deterministic-physics");
@@ -391,7 +392,7 @@ export const DecisionSimulator: React.FC<DecisionSimulatorProps> = ({
             </span>
           </div>
           <span className="text-[11px] font-bold text-indigo-700 bg-white px-2.5 py-1 rounded-xl border border-indigo-200">
-            Adopting alternative directly updates this family member's schedule
+            Adopting alternative directly updates this family member&apos;s schedule
           </span>
         </div>
       )}
@@ -1009,7 +1010,7 @@ export const DecisionSimulator: React.FC<DecisionSimulatorProps> = ({
             <div className="flex items-center gap-2">
               <Info className="w-4 h-4 text-indigo-600 flex-shrink-0" />
               <span>
-                Fine-tune each activity's start time, transit mode, duration, or mask status. Consequence metrics recalculate dynamically.
+                Fine-tune each activity&apos;s start time, transit mode, duration, or mask status. Consequence metrics recalculate dynamically.
               </span>
             </div>
             <button

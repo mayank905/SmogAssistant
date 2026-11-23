@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { Search, MapPin, Loader2, Navigation } from "lucide-react";
+import { Search, MapPin, Loader2, Navigation, AlertCircle } from "lucide-react";
 import { GeocodingResult } from "@/lib/api/open-meteo";
+import { logger } from "@/lib/utils/logger";
 
 interface CitySearchBarProps {
   currentCity: string;
@@ -19,6 +20,7 @@ export const CitySearchBar: React.FC<CitySearchBarProps> = ({
   const [suggestions, setSuggestions] = useState<GeocodingResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
   // Debounced search
@@ -38,7 +40,7 @@ export const CitySearchBar: React.FC<CitySearchBarProps> = ({
           setIsOpen(true);
         }
       } catch (err) {
-        console.error("City search failed:", err);
+        logger.error("City search failed:", err);
       } finally {
         setIsSearching(false);
       }
@@ -58,9 +60,16 @@ export const CitySearchBar: React.FC<CitySearchBarProps> = ({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  const showStatus = (msg: string) => {
+    setStatusMessage(msg);
+    setTimeout(() => {
+      setStatusMessage((current) => (current === msg ? null : current));
+    }, 4000);
+  };
+
   const handleUseCurrentLocation = () => {
     if (typeof window === "undefined" || !navigator.geolocation) {
-      alert("Geolocation is not supported by your browser");
+      showStatus("Geolocation is not supported by your browser");
       return;
     }
 
@@ -71,7 +80,7 @@ export const CitySearchBar: React.FC<CitySearchBarProps> = ({
         setQuery("");
       },
       (err) => {
-        alert("Unable to retrieve location: " + err.message);
+        showStatus("Unable to retrieve location: " + err.message);
       }
     );
   };
@@ -102,6 +111,27 @@ export const CitySearchBar: React.FC<CitySearchBarProps> = ({
           </button>
         </div>
       </div>
+
+      {statusMessage && (
+        <div 
+          role="status" 
+          aria-live="polite" 
+          className="absolute left-0 right-0 mt-1.5 p-2.5 bg-amber-50 border border-amber-200 text-amber-900 rounded-xl text-xs flex items-center justify-between shadow-md z-50 animate-fade-in"
+        >
+          <div className="flex items-center space-x-2">
+            <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0" />
+            <span>{statusMessage}</span>
+          </div>
+          <button 
+            type="button" 
+            onClick={() => setStatusMessage(null)}
+            className="text-amber-700 hover:text-amber-900 font-bold ml-2 text-sm leading-none"
+            aria-label="Dismiss alert"
+          >
+            ×
+          </button>
+        </div>
+      )}
 
       {isOpen && suggestions.length > 0 && (
         <div className="absolute left-0 right-0 mt-1 bg-white rounded-xl shadow-lg border border-slate-200 z-50 overflow-hidden max-h-64 overflow-y-auto">

@@ -15,6 +15,7 @@ import {
 } from "@/types/household";
 import { SCENARIO_PRESETS } from "@/lib/api/scenario-presets";
 import { generateDeterministicRecommendations } from "@/lib/ai/heuristic-fallback";
+import { logger } from "@/lib/utils/logger";
 
 interface AppContextType {
   isMounted: boolean;
@@ -103,7 +104,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         });
       }
     } catch (e) {
-      console.warn("Could not load stored keys:", e);
+      logger.warn("Could not load stored keys:", e);
     }
 
     try {
@@ -116,7 +117,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }
       }
     } catch (e) {
-      console.warn("Could not load stored profiles:", e);
+      logger.warn("Could not load stored profiles:", e);
     }
 
     try {
@@ -128,14 +129,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }
       }
     } catch (e) {
-      console.warn("Could not load stored household members:", e);
+      logger.warn("Could not load stored household members:", e);
     }
   }, []);
 
   const toggleNotifications = () => {
     if (typeof window !== "undefined" && "Notification" in window) {
       if (Notification.permission === "granted") {
-        alert("Daily 06:30 AM Morning Briefing alerts are active for your location.");
+        setHasNotificationsEnabled((prev) => !prev);
       } else {
         Notification.requestPermission().then((perm) => {
           setHasNotificationsEnabled(perm === "granted");
@@ -176,7 +177,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setRecommendations(generateDeterministicRecommendations(curTelemetry, curContext));
       }
     } catch (err) {
-      console.warn("Using offline deterministic recommendations:", err);
+      logger.warn("Using offline deterministic recommendations:", err);
       setRecommendations(generateDeterministicRecommendations(curTelemetry, curContext));
     } finally {
       setIsLoading(false);
@@ -210,7 +211,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setHouseholdAdvice(DEFAULT_HOUSEHOLD_ADVICE);
       }
     } catch (err) {
-      console.warn("Falling back to deterministic household advice:", err);
+      logger.warn("Falling back to deterministic household advice:", err);
       setHouseholdAdvice(DEFAULT_HOUSEHOLD_ADVICE);
     } finally {
       setIsHouseholdLoading(false);
@@ -245,7 +246,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           }
         }
       } catch (err) {
-        console.error("Live fetch failed:", err);
+        logger.error("Live fetch failed:", err);
       }
     }
     setIsLoading(false);
@@ -272,7 +273,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }
       }
     } catch (err) {
-      console.error("Failed to fetch location data:", err);
+      logger.error("Failed to fetch location data:", err);
     } finally {
       setIsLoading(false);
     }
@@ -283,7 +284,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     try {
       localStorage.setItem("smogassistant_household_members", JSON.stringify(updated));
     } catch (e) {
-      console.warn("Failed to persist household members:", e);
+      logger.warn("Failed to persist household members:", e);
     }
     refreshHouseholdAdviceAction(telemetry, updated, keysState.geminiKey);
   };
@@ -312,7 +313,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     try {
       localStorage.setItem("smogassistant_household_members", JSON.stringify(updated));
     } catch (e) {
-      console.warn("Failed to persist updated member schedule:", e);
+      logger.warn("Failed to persist updated member schedule:", e);
     }
     refreshHouseholdAdviceAction(telemetry, updated, keysState.geminiKey);
   };
@@ -329,7 +330,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     try {
       localStorage.setItem("smogassistant_household_members", JSON.stringify(updated));
     } catch (e) {
-      console.warn("Failed to persist updated member schedule from simulator:", e);
+      logger.warn("Failed to persist updated member schedule from simulator:", e);
     }
     refreshHouseholdAdviceAction(telemetry, updated, keysState.geminiKey);
   };
@@ -342,7 +343,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       localStorage.setItem("smogassistant_gemini_valid", String(newKeys.isGeminiValid));
       localStorage.setItem("smogassistant_waqi_valid", String(newKeys.isWaqiValid));
     } catch (e) {
-      console.warn("Failed to persist keys to localStorage:", e);
+      logger.warn("Failed to persist keys to localStorage:", e);
     }
 
     refreshRecommendations(telemetry, context, newKeys.geminiKey);
@@ -367,7 +368,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     try {
       localStorage.setItem("smogassistant_saved_profiles", JSON.stringify(nextProfiles));
     } catch (e) {
-      console.warn("Failed to persist profiles:", e);
+      logger.warn("Failed to persist profiles:", e);
     }
     refreshRecommendations(telemetry, updatedContext);
   };
@@ -383,7 +384,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     try {
       localStorage.setItem("smogassistant_saved_profiles", JSON.stringify(nextProfiles));
     } catch (e) {
-      console.warn("Failed to persist profiles:", e);
+      logger.warn("Failed to persist profiles:", e);
     }
   };
 

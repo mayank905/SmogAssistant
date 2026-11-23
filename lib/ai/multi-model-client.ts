@@ -16,6 +16,7 @@ import {
   evaluateScheduleItem, 
   generateClimateAlternative 
 } from "@/lib/decision-simulator";
+import { logger } from "@/lib/utils/logger";
 
 /**
  * Comprehensive Active Gemini Models (Starting from 3.6-Flash downwards)
@@ -246,7 +247,7 @@ Provide a structured, scientifically accurate, empathetic response specifically 
       throw new Error(`Empty response from ${modelTier}`);
     } catch (err: unknown) {
       const errMsg = err instanceof Error ? err.message : String(err);
-      console.warn(`[SmogAssistant Waterfall] Model ${modelTier} failed: ${errMsg}. Cascading to next tier.`);
+      logger.warn(`[SmogAssistant Waterfall] Model ${modelTier} failed: ${errMsg}. Cascading to next tier.`);
       attempts.push({
         model: modelTier,
         status: "failed",
@@ -577,7 +578,7 @@ Return a JSON object conforming STRICTLY to the following schema:
       throw new Error(`Incomplete JSON schema returned from ${modelTier}`);
     } catch (err: unknown) {
       const errMsg = err instanceof Error ? err.message : String(err);
-      console.warn(`[SmogAssistant Waterfall] Household advice on ${modelTier} failed: ${errMsg}. Falling back...`);
+      logger.warn(`[SmogAssistant Waterfall] Household advice on ${modelTier} failed: ${errMsg}. Falling back...`);
       attempts.push({
         model: modelTier,
         status: "failed",
@@ -754,7 +755,7 @@ Return a JSON object conforming STRICTLY to the following structure:
       throw new Error(`Incomplete schema from ${modelTier}`);
     } catch (err: unknown) {
       const errMsg = err instanceof Error ? err.message : String(err);
-      console.warn(`[SmogAssistant Waterfall] Recommendations on ${modelTier} failed: ${errMsg}. Cascading...`);
+      logger.warn(`[SmogAssistant Waterfall] Recommendations on ${modelTier} failed: ${errMsg}. Cascading...`);
       attempts.push({
         model: modelTier,
         status: "failed",
@@ -863,7 +864,7 @@ Return a JSON object conforming STRICTLY to this schema:
         };
       }
     } catch (err: unknown) {
-      console.warn(`[SmogAssistant Simulator] Tier ${modelTier} alternative generation failed:`, err);
+      logger.warn(`[SmogAssistant Simulator] Tier ${modelTier} alternative generation failed:`, err);
     }
   }
 

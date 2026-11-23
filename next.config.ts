@@ -1,5 +1,17 @@
 import type { NextConfig } from "next";
 
+const contentSecurityPolicy = [
+  "default-src 'self'",
+  "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: https: blob:",
+  "font-src 'self' data:",
+  "connect-src 'self' https://air-quality-api.open-meteo.com https://geocoding-api.open-meteo.com https://api.open-meteo.com https://api.waqi.info https://tiles.aqicn.org https://generativelanguage.googleapis.com",
+  "frame-ancestors 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+].join("; ");
+
 const securityHeaders = [
   {
     key: "X-DNS-Prefetch-Control",
@@ -18,12 +30,20 @@ const securityHeaders = [
     value: "nosniff",
   },
   {
+    key: "X-XSS-Protection",
+    value: "1; mode=block",
+  },
+  {
     key: "Referrer-Policy",
     value: "strict-origin-when-cross-origin",
   },
   {
     key: "Permissions-Policy",
     value: "camera=(), microphone=(), geolocation=(self)",
+  },
+  {
+    key: "Content-Security-Policy",
+    value: contentSecurityPolicy,
   },
 ];
 

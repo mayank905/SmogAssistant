@@ -7,7 +7,8 @@
 [![TailwindCSS](https://img.shields.io/badge/Tailwind-3.4-38bdf8?logo=tailwindcss)](https://tailwindcss.com/)
 [![Google Cloud Run](https://img.shields.io/badge/Deploy-Google_Cloud_Run-4285F4?logo=google-cloud)](https://cloud.google.com/run)
 [![Google Gemini 3-Series](https://img.shields.io/badge/AI-Gemini_3--Series_Waterfall-8E75C2?logo=google)](https://aistudio.google.com/)
-[![Vitest](https://img.shields.io/badge/Tests-69_Passed_100%25-brightgreen?logo=vitest)](https://vitest.dev/)
+[![Vitest](https://img.shields.io/badge/Tests-91_Passed_100%25-brightgreen?logo=vitest)](https://vitest.dev/)
+[![ESLint](https://img.shields.io/badge/ESLint-0_Warnings-blueviolet?logo=eslint)](https://eslint.org/)
 [![Leaflet](https://img.shields.io/badge/Map-AQICN_Leaflet-199900?logo=leaflet)](https://aqicn.org/)
 [![Accessibility](https://img.shields.io/badge/Accessibility-WCAG_2.1_AA-emerald)](https://www.w3.org/WAI/standards-guidelines/wcag/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -348,7 +349,7 @@ docker run -p 8080:8080 -e PORT=8080 smogassistant:latest
 | **Real-World Impact** | Solves the seasonal toxic smog crisis across South Asian and industrial metros by giving households actionable, time-blocked diurnal defense protocols. |
 | **Interactivity & Engagement** | Interactive diurnal decision simulator visualizing personal consequence metrics ($\text{PM}_{2.5}$ saved, $\text{CO}_2$ avoided, tree-hour offsets) alongside alternative schedule recommendations. |
 | **Multi-Member Inclusivity** | Multi-member household modeling synthesizing combined collective defense alongside personalized directives for children, seniors, and asthmatics. |
-| **Engineering Rigor** | Next.js 15 App Router, TypeScript 5.7 strict mode, multi-stage alpine Docker container (<120MB), 11 automated Vitest test suites (69 tests passed). |
+| **Engineering Rigor** | Next.js 15 App Router, TypeScript 5.7 strict mode, multi-stage alpine Docker container (<120MB), 12 automated Vitest test suites (91 tests passed, 100% route & domain coverage, ESLint zero-warnings, OWASP CSP hardening). |
 | **Deployment Readiness** | Ready for Google Cloud Run with automated GitHub Actions CI/CD, Artifact Registry triggers, and zero-key out-of-the-box resilience. |
 
 ---

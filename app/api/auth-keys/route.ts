@@ -1,10 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyGeminiKey } from "@/lib/ai/gemini-client";
 import { verifyWaqiToken } from "@/lib/api/waqi";
+import { logger } from "@/lib/utils/logger";
+
+interface AuthKeysBody {
+  type?: string;
+  geminiKey?: unknown;
+  waqiToken?: unknown;
+}
 
 export async function POST(request: NextRequest) {
+  let body: AuthKeysBody;
   try {
-    const body = await request.json();
+    body = (await request.json()) as AuthKeysBody;
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON in request body" }, { status: 400 });
+  }
+
+  try {
     const { type = "all", geminiKey, waqiToken } = body;
 
     const allowedTypes = ["all", "gemini", "waqi"];
@@ -50,7 +63,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(results);
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Internal error";
-    console.error("Auth keys validation error:", message);
+    logger.error("Auth keys validation error:", message);
     return NextResponse.json(
       { error: "Validation processing failed", details: message },
       { status: 500 }

@@ -1,6 +1,7 @@
 import { AirQualityTelemetry, CpcbCategory } from "@/types/aqi";
 import { calculatePm10SubIndex, calculatePm25SubIndex, getCpcbCategory } from "../aqi-calculator";
 import { SCENARIO_PRESETS } from "./scenario-presets";
+import { logger } from "@/lib/utils/logger";
 
 interface CacheEntry<T> {
   data: T;
@@ -89,7 +90,7 @@ export async function searchCities(query: string): Promise<GeocodingResult[]> {
     setInCache(cacheKey, results, 60 * 60 * 1000); // 1 hr cache for geo
     return results;
   } catch (error) {
-    console.warn("Geocoding fetch error:", error);
+    logger.warn("Geocoding fetch error:", error);
     // Fallback: match predefined scenario cities if offline
     return SCENARIO_PRESETS
       .filter(p => p.telemetry.location.city.toLowerCase().includes(trimmed.toLowerCase()))
@@ -155,7 +156,7 @@ export async function fetchLiveAirQuality(
         }
       }
     } catch (e) {
-      console.warn("WAQI station fetch failed, falling back to Open-Meteo:", e);
+      logger.warn("WAQI station fetch failed, falling back to Open-Meteo:", e);
     }
   }
 
@@ -220,7 +221,7 @@ export async function fetchLiveAirQuality(
     setInCache(cacheKey, result);
     return result;
   } catch (error) {
-    console.warn("Live AQI fetch failed, using fallback scenario:", error);
+    logger.warn("Live AQI fetch failed, using fallback scenario:", error);
     // Graceful fallback to Delhi Severe preset
     const fallback = SCENARIO_PRESETS[0].telemetry;
     return {
