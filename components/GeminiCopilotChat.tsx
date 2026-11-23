@@ -96,12 +96,13 @@ export const GeminiCopilotChat: React.FC<GeminiCopilotChatProps> = ({
           },
         ]);
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
+      const errorMessage = e instanceof Error ? e.message : String(e);
       setMessages((prev) => [
         ...prev,
         {
           sender: "copilot",
-          text: `Error connecting to Gemini Copilot service: ${e?.message}`,
+          text: `Error connecting to Gemini Copilot service: ${errorMessage}`,
           timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
         },
       ]);

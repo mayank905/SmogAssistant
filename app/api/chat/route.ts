@@ -4,9 +4,16 @@ import { AirQualityTelemetry } from "@/types/aqi";
 import { UserContextProfile, DEFAULT_USER_CONTEXT } from "@/types/context";
 import { SCENARIO_PRESETS } from "@/lib/api/scenario-presets";
 
+interface ChatRequestBody {
+  query?: string;
+  telemetry?: AirQualityTelemetry;
+  context?: UserContextProfile;
+  apiKey?: string;
+}
+
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    const body = (await request.json()) as ChatRequestBody;
     const { query, telemetry = SCENARIO_PRESETS[0].telemetry, context = DEFAULT_USER_CONTEXT, apiKey } = body;
 
     if (!query || typeof query !== "string") {

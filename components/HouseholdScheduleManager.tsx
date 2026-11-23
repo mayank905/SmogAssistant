@@ -15,12 +15,9 @@ import {
   Trash2,
   Clock,
   MapPin,
-  Activity,
   HeartPulse,
-  ShieldAlert,
   CheckCircle2,
   RotateCcw,
-  Sparkles,
   Car,
   Bike,
   Footprints,
@@ -29,8 +26,6 @@ import {
   Plus,
   X,
   ChevronRight,
-  Calendar,
-  AlertCircle
 } from "lucide-react";
 
 const STORAGE_KEY = "smogassistant_household_members";
@@ -75,7 +70,6 @@ export const HouseholdScheduleManager: React.FC<HouseholdScheduleManagerProps> =
   const [members, setMembers] = useState<HouseholdMember[]>(() => {
     return initialMembers || INITIAL_HOUSEHOLD_MEMBERS;
   });
-  const [isLoaded, setIsLoaded] = useState(false);
   const [selectedMemberId, setSelectedMemberId] = useState<string>(() => {
     return (initialMembers && initialMembers[0]?.id) || INITIAL_HOUSEHOLD_MEMBERS[0].id;
   });
@@ -127,8 +121,6 @@ export const HouseholdScheduleManager: React.FC<HouseholdScheduleManagerProps> =
       }
     } catch (e) {
       console.warn("Failed to read household members from localStorage:", e);
-    } finally {
-      setIsLoaded(true);
     }
   }, []);
 
@@ -714,7 +706,7 @@ export const HouseholdScheduleManager: React.FC<HouseholdScheduleManagerProps> =
                   </label>
                   <select
                     value={memberSensitivity}
-                    onChange={(e) => setMemberSensitivity(e.target.value as any)}
+                    onChange={(e) => setMemberSensitivity(e.target.value as "low" | "medium" | "high" | "severe")}
                     className="w-full px-3 py-2 text-sm rounded-xl border border-slate-300 focus:outline-hidden focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
                   >
                     <option value="severe">Severe (High Vulnerability)</option>

@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import { AIRecommendationResponse, DayBlock } from "@/types/recommendations";
-import { Sunrise, Wind, Sun, Moon, AlertTriangle, ShieldCheck, BellRing, Sparkles, Check } from "lucide-react";
+import { AIRecommendationResponse } from "@/types/recommendations";
+import { Sunrise, Wind, Sun, Moon, AlertTriangle, ShieldCheck, BellRing, Check } from "lucide-react";
 
 interface MorningBriefingCardProps {
   briefing: AIRecommendationResponse["morningBriefing"];

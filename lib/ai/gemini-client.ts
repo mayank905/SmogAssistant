@@ -51,8 +51,8 @@ export async function verifyGeminiKey(apiKey: string): Promise<{ valid: boolean;
           authedModel = testModel;
           break;
         }
-      } catch (err: any) {
-        lastError = err?.message || String(err);
+      } catch (err: unknown) {
+        lastError = err instanceof Error ? err.message : String(err);
       }
     }
 
@@ -64,8 +64,8 @@ export async function verifyGeminiKey(apiKey: string): Promise<{ valid: boolean;
       };
     }
     return { valid: false, message: lastError || "No response from Gemini API" };
-  } catch (err: any) {
-    const errorMessage = err?.message || "Invalid or restricted API key";
+  } catch (err: unknown) {
+    const errorMessage = err instanceof Error ? err.message : "Invalid or restricted API key";
     return { valid: false, message: errorMessage };
   }
 }

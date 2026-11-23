@@ -4,7 +4,7 @@ import React from "react";
 import { useAppContext } from "@/context/AppContext";
 import { IndoorMitigationGuide } from "@/components/IndoorMitigationGuide";
 import { SustainableTransitComparator } from "@/components/SustainableTransitComparator";
-import { Leaf, Trees, Wind, Sparkles, ShieldCheck } from "lucide-react";
+import { Leaf } from "lucide-react";
 
 export default function MitigationPage() {
   const {

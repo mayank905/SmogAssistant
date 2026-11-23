@@ -6,7 +6,7 @@ import { HouseholdAdviceCard } from "@/components/HouseholdAdviceCard";
 import { HouseholdScheduleManager } from "@/components/HouseholdScheduleManager";
 import { VulnerableAlertsBanner } from "@/components/VulnerableAlertsBanner";
 import { DailyRoutinePlanner } from "@/components/DailyRoutinePlanner";
-import { Users, Shield, RefreshCw, Sparkles, CheckCircle2 } from "lucide-react";
+import { Users, RefreshCw } from "lucide-react";
 
 export default function HouseholdPage() {
   const {

@@ -5,7 +5,6 @@ import {
   HouseholdMember,
   CombinedHouseholdAdvice,
   MemberPersonalAdvice,
-  HouseholdAdviceResponse,
 } from "@/types/household";
 import { HouseholdScheduleManager } from "@/components/HouseholdScheduleManager";
 import { HouseholdAdviceCard } from "@/components/HouseholdAdviceCard";

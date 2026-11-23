@@ -3,7 +3,7 @@
 import React from "react";
 import { useAppContext } from "@/context/AppContext";
 import { GeminiCopilotChat } from "@/components/GeminiCopilotChat";
-import { Sparkles, ShieldAlert, Cpu, Key, CheckCircle2, ShieldCheck, HelpCircle } from "lucide-react";
+import { Sparkles, ShieldAlert, Cpu, Key, ShieldCheck } from "lucide-react";
 
 export default function CopilotPage() {
   const {

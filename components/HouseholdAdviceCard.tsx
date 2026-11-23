@@ -10,13 +10,11 @@ import {
 import {
   Wind,
   ShieldCheck,
-  ShieldAlert,
   Home,
   Users,
   HeartPulse,
   Clock,
   ArrowRight,
-  CheckCircle2,
   Sparkles,
   RefreshCw,
   AlertTriangle,

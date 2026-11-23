@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { AIRecommendationResponse } from "@/types/recommendations";
 import { calculatePlantRequirements } from "@/lib/indoor-plants";
-import { Flower2, Wrench, Wind, ShieldAlert, Sparkles, CheckCircle2, ChevronRight } from "lucide-react";
+import { Flower2, Wrench, Wind, Sparkles, CheckCircle2 } from "lucide-react";
 
 interface IndoorMitigationGuideProps {
   indoorMitigation: AIRecommendationResponse["indoorMitigation"];

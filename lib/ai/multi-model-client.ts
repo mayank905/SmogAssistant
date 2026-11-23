@@ -7,8 +7,7 @@ import {
   HouseholdAdviceResponse, 
   CombinedHouseholdAdvice, 
   MemberPersonalAdvice, 
-  INITIAL_HOUSEHOLD_MEMBERS,
-  DEFAULT_HOUSEHOLD_ADVICE
+  INITIAL_HOUSEHOLD_MEMBERS
 } from "@/types/household";
 import { isAirQualityDomainQuery, GUARDRAILS_SYSTEM_PROMPT, AIR_QUALITY_REFUSAL_MESSAGE } from "./domain-guardrails";
 import { generateDeterministicRecommendations } from "./heuristic-fallback";
@@ -245,13 +244,14 @@ Provide a structured, scientifically accurate, empathetic response specifically 
         };
       }
       throw new Error(`Empty response from ${modelTier}`);
-    } catch (err: any) {
-      console.warn(`[SmogAssistant Waterfall] Model ${modelTier} failed: ${err?.message || err}. Cascading to next tier.`);
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      console.warn(`[SmogAssistant Waterfall] Model ${modelTier} failed: ${errMsg}. Cascading to next tier.`);
       attempts.push({
         model: modelTier,
         status: "failed",
         durationMs: Date.now() - tierStart,
-        error: err?.message || String(err),
+        error: errMsg,
       });
     }
   }
@@ -465,7 +465,6 @@ export async function generateHouseholdAdvice(
   members: HouseholdMember[] = INITIAL_HOUSEHOLD_MEMBERS,
   overrideApiKey?: string
 ): Promise<HouseholdAdviceResponse> {
-  const startTime = Date.now();
   const apiKey = cleanApiKey(overrideApiKey || process.env.GEMINI_API_KEY);
 
   if (!apiKey) {
@@ -576,13 +575,14 @@ Return a JSON object conforming STRICTLY to the following schema:
         };
       }
       throw new Error(`Incomplete JSON schema returned from ${modelTier}`);
-    } catch (err: any) {
-      console.warn(`[SmogAssistant Waterfall] Household advice on ${modelTier} failed: ${err?.message || err}. Falling back...`);
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      console.warn(`[SmogAssistant Waterfall] Household advice on ${modelTier} failed: ${errMsg}. Falling back...`);
       attempts.push({
         model: modelTier,
         status: "failed",
         durationMs: Date.now() - tierStart,
-        error: err?.message || String(err),
+        error: errMsg,
       });
     }
   }
@@ -752,13 +752,14 @@ Return a JSON object conforming STRICTLY to the following structure:
         };
       }
       throw new Error(`Incomplete schema from ${modelTier}`);
-    } catch (err: any) {
-      console.warn(`[SmogAssistant Waterfall] Recommendations on ${modelTier} failed: ${err?.message || err}. Cascading...`);
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      console.warn(`[SmogAssistant Waterfall] Recommendations on ${modelTier} failed: ${errMsg}. Cascading...`);
       attempts.push({
         model: modelTier,
         status: "failed",
         durationMs: Date.now() - tierStart,
-        error: err?.message || String(err),
+        error: errMsg,
       });
     }
   }

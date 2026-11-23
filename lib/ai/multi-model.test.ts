@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect } from "vitest";
 import { 
   MODEL_WATERFALL, 
   GEMINI_3_SERIES_MODELS,
@@ -9,7 +9,7 @@ import {
 } from "./multi-model-client";
 import { SCENARIO_PRESETS } from "../api/scenario-presets";
 import { DEFAULT_USER_CONTEXT } from "@/types/context";
-import { INITIAL_HOUSEHOLD_MEMBERS, HouseholdMember } from "@/types/household";
+import { INITIAL_HOUSEHOLD_MEMBERS } from "@/types/household";
 
 describe("Multi-Model Client & Waterfall Architecture", () => {
   const severeTelemetry = SCENARIO_PRESETS[0].telemetry; // Delhi Severe Smog AQI 485

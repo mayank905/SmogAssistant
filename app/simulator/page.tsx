@@ -3,7 +3,7 @@
 import React from "react";
 import { useAppContext } from "@/context/AppContext";
 import { DecisionSimulator } from "@/components/DecisionSimulator";
-import { Sliders, Activity, Wind, CloudRain, Flame, CheckCircle2 } from "lucide-react";
+import { Sliders, Activity, Wind, Flame } from "lucide-react";
 
 export default function SimulatorPage() {
   const {

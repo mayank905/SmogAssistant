@@ -140,6 +140,8 @@ export const ContextProfiler: React.FC<ContextProfilerProps> = ({
           </div>
           <button
             onClick={onClose}
+            aria-label="Close Profile Manager"
+            title="Close Profile Manager"
             className="p-2 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100 transition-colors"
           >
             <X className="w-5 h-5" />

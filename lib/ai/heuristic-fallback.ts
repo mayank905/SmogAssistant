@@ -12,7 +12,6 @@ export function generateDeterministicRecommendations(
   const isVeryPoor = aqi >= 300 && aqi < 400;
   const isPoor = aqi >= 200 && aqi < 300;
   const isModerate = aqi >= 100 && aqi < 200;
-  const isGood = aqi < 100;
 
   // 1. Air Quality Summary
   let headline = `Current air quality is ${category} in ${telemetry.location.city}.`;

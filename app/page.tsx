@@ -23,9 +23,7 @@ import {
   CheckCircle2, 
   Cpu, 
   ShieldCheck, 
-  Activity, 
-  Wind,
-  ShieldAlert
+  Activity
 } from "lucide-react";
 
 export default function Home() {
@@ -120,8 +118,9 @@ export default function Home() {
           {/* Quick Profile Selector Button */}
           <button
             onClick={() => setIsProfilerOpen(true)}
-            className="inline-flex items-center justify-center px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold shadow-xs transition-colors"
+            aria-label="Manage Personalized Profiles"
             title="Manage Personalized Profiles"
+            className="inline-flex items-center justify-center px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold shadow-xs transition-colors"
           >
             <Bookmark className="w-3.5 h-3.5 mr-1.5 text-indigo-600" />
             <span className="max-w-[140px] sm:max-w-[180px] truncate">
@@ -136,12 +135,13 @@ export default function Home() {
           {/* API Key Modal Button */}
           <button
             onClick={() => setIsKeyModalOpen(true)}
+            aria-label="API Key Settings (Gemini and WAQI)"
+            title="API Key Settings (Gemini & WAQI)"
             className={`p-2.5 rounded-xl border text-xs font-bold transition-colors ${
               keysState.isGeminiValid || keysState.isWaqiValid
                 ? "border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100"
                 : "border-slate-300 bg-white hover:bg-slate-50 text-slate-600 hover:text-slate-900"
             }`}
-            title="API Key Settings (Gemini & WAQI)"
           >
             <Key className="w-4 h-4 text-indigo-600" />
           </button>
@@ -150,6 +150,7 @@ export default function Home() {
           <button
             onClick={() => refreshRecommendations()}
             disabled={isLoading}
+            aria-label="Refresh AI synthesis"
             title="Refresh AI synthesis"
             className="p-2.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-600 hover:text-slate-900 transition-colors"
           >

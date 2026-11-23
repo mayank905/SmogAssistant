@@ -48,10 +48,11 @@ export async function verifyWaqiToken(token: string): Promise<WaqiVerificationRe
       const err = data.data || data.message || "Invalid or expired WAQI token";
       return { valid: false, message: typeof err === "string" ? err : "Invalid WAQI token" };
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMsg = error instanceof Error ? error.message : "Network error";
     return {
       valid: false,
-      message: `Failed to connect to aqicn.org: ${error?.message || "Network error"}`,
+      message: `Failed to connect to aqicn.org: ${errorMsg}`,
     };
   }
 }

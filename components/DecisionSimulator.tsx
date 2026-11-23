@@ -18,13 +18,11 @@ import { CommuteMode } from "@/types/context";
 import { HouseholdMember, DayScheduleItem } from "@/types/household";
 import {
   Activity,
-  Gauge,
   Wind,
   Leaf,
   Car,
   ShieldCheck,
   Clock,
-  ArrowRight,
   AlertTriangle,
   CheckCircle2,
   Plus,
@@ -34,7 +32,6 @@ import {
   Sun,
   Moon,
   TrendingDown,
-  ChevronRight,
   Info,
   Users,
 } from "lucide-react";
@@ -304,9 +301,7 @@ export const DecisionSimulator: React.FC<DecisionSimulatorProps> = ({
   };
 
   const baselinePmRisk = getInhalationRiskColor(baselineMetrics.totalInhaledPm25Ug);
-  const altPmRisk = alternativeMetrics ? getInhalationRiskColor(alternativeMetrics.totalInhaledPm25Ug) : null;
   const baselineCo2Risk = getCo2Color(baselineMetrics.totalCo2Kg);
-  const altCo2Risk = alternativeMetrics ? getCo2Color(alternativeMetrics.totalCo2Kg) : null;
 
   return (
     <div className={`bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-8 space-y-8 ${className}`}>

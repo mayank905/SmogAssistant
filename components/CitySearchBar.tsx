@@ -90,11 +90,12 @@ export const CitySearchBar: React.FC<CitySearchBarProps> = ({
           className="w-full pl-10 pr-24 py-2.5 bg-white border border-slate-300 rounded-xl text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent shadow-sm transition-all"
         />
         <div className="absolute inset-y-0 right-0 pr-2 flex items-center space-x-1">
-          {isSearching && <Loader2 className="w-4 h-4 animate-spin text-slate-400 mr-1" />}
+          {(isSearching || isLoading) && <Loader2 className="w-4 h-4 animate-spin text-slate-400 mr-1" />}
           <button
             type="button"
             onClick={handleUseCurrentLocation}
             title="Use Current GPS Coordinates"
+            aria-label="Use Current GPS Coordinates"
             className="p-1.5 rounded-lg text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 transition-colors"
           >
             <Navigation className="w-4 h-4" />

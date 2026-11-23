@@ -8,7 +8,6 @@ import { useAppContext } from "@/context/AppContext";
 
 export function AppShell({ children }: { children: ReactNode }) {
   const {
-    isMounted,
     context,
     keysState,
     isProfilerOpen,
