@@ -19,23 +19,31 @@ export async function POST(request: NextRequest) {
 
     // Validate Gemini Key if requested or provided
     if ((type === "gemini" || type === "all") && geminiKey !== undefined) {
-      if (typeof geminiKey !== "string" || geminiKey.trim() === "") {
+      const sanitizedKey = typeof geminiKey === "string" 
+        ? geminiKey.replace(/['"\r\n\t]/g, "").trim() 
+        : "";
+
+      if (sanitizedKey.length === 0) {
         results.gemini = { valid: false, message: "Gemini API key is empty." };
-      } else if (geminiKey.length > 256 || !/^[A-Za-z0-9_-]+$/.test(geminiKey.trim())) {
-        results.gemini = { valid: false, message: "Malformed Gemini API Key format." };
+      } else if (sanitizedKey.length < 10 || sanitizedKey.length > 512) {
+        results.gemini = { valid: false, message: "Invalid Gemini API key length." };
       } else {
-        results.gemini = await verifyGeminiKey(geminiKey.trim());
+        results.gemini = await verifyGeminiKey(sanitizedKey);
       }
     }
 
     // Validate WAQI Token if requested or provided
     if ((type === "waqi" || type === "all") && waqiToken !== undefined) {
-      if (typeof waqiToken !== "string" || waqiToken.trim() === "") {
+      const sanitizedToken = typeof waqiToken === "string" 
+        ? waqiToken.replace(/['"\r\n\t]/g, "").trim() 
+        : "";
+
+      if (sanitizedToken.length === 0) {
         results.waqi = { valid: false, message: "WAQI API token is empty." };
-      } else if (waqiToken.length > 128 || !/^[A-Za-z0-9_-]+$/.test(waqiToken.trim())) {
-        results.waqi = { valid: false, message: "Malformed WAQI API Token format." };
+      } else if (sanitizedToken.length < 5 || sanitizedToken.length > 256) {
+        results.waqi = { valid: false, message: "Invalid WAQI API token length." };
       } else {
-        results.waqi = await verifyWaqiToken(waqiToken.trim());
+        results.waqi = await verifyWaqiToken(sanitizedToken);
       }
     }
 

@@ -29,7 +29,7 @@ export default function CopilotPage() {
               {keysState.isGeminiValid ? (
                 <span 
                   className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-indigo-100 text-indigo-800 border border-indigo-200"
-                  title="Active: gemini-3.8-flash → 3.6-flash → 3.5-flash → 3.5-flash-lite → 3.1-flash-lite"
+                  title="Active: gemini-3.6-flash → 3.5-flash → 3.5-flash-lite → 3.1-flash-lite → 2.5-flash"
                 >
                   <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 mr-1 animate-pulse" />
                   Gemini 3-Series Connected
@@ -74,7 +74,7 @@ export default function CopilotPage() {
             <span>3-Series Fallback Waterfall</span>
           </div>
           <p className="text-xs text-slate-600 leading-relaxed">
-            Requests cascade automatically through <code>gemini-3.8-flash</code> &rarr; <code>gemini-3.6-flash</code> &rarr; <code>gemini-3.5-flash</code> &rarr; <code>gemini-3.5-flash-lite</code> &rarr; <code>gemini-3.1-flash-lite</code>, followed by 2.5 and local deterministic heuristics.
+            Requests cascade automatically through <code>gemini-3.6-flash</code> &rarr; <code>gemini-3.5-flash</code> &rarr; <code>gemini-3.5-flash-lite</code> &rarr; <code>gemini-3.1-flash-lite</code> &rarr; <code>gemini-2.5-flash</code>, followed by local deterministic heuristics.
           </p>
         </div>
 

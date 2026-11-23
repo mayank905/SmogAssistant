@@ -60,13 +60,14 @@ flowchart TD
     AQIRoute -.-> WAQISensors
     P2 -.-> AQICNTiles
 
-    subgraph ReasoningEngine["Gemini 3-Series Waterfall Pipeline"]
-        M1["1. Gemini 3.8 Flash (Primary Reasoning)"]
-        M2["2. Gemini 3.6 Flash (Secondary Fallback)"]
-        M3["3. Gemini 3.5 Flash (Tertiary Fallback)"]
-        M4["4. Gemini 3.5 Flash Lite (Fast Efficiency)"]
-        M5["5. Gemini 3.1 Flash Lite (Ultra-Low Latency)"]
-        Heuristic["6. Deterministic Heuristic Engine (100% Offline-Safe)"]
+    subgraph ReasoningEngine["Gemini Multi-Model Waterfall Pipeline"]
+        M1["1. Gemini 3.6 Flash (Primary Reasoning)"]
+        M2["2. Gemini 3.5 Flash (Secondary Fallback)"]
+        M3["3. Gemini 3.5 Flash Lite (Fast Efficiency)"]
+        M4["4. Gemini 3.1 Flash Lite (Ultra-Low Latency)"]
+        M5["5. Gemini 2.5 Flash (High-Throughput Fallback)"]
+        M6["6. Gemini 1.5 Flash (Resilient Fallback)"]
+        Heuristic["7. Deterministic Heuristic Engine (100% Offline-Safe)"]
         Guardrails["Strict Domain Guardrails (Rejects Out-of-Scope Prompts)"]
     end
 
@@ -116,14 +117,15 @@ flowchart TD
   * **Tree-Hour Absorption Equivalence**: Equivalent hours of mature tree carbon sequestration.
   * **Health Hazard Score**: Immediate numerical risk reduction score.
 
-### 5. 🤖 Gemini 3-Series AI Copilot (`/copilot`)
-* **Multi-Model Waterfall Architecture**: Uses Google's active **Gemini 3-Series** models with automated graceful degradation:
-  1. `gemini-3.8-flash`
-  2. `gemini-3.6-flash`
-  3. `gemini-3.5-flash`
-  4. `gemini-3.5-flash-lite`
-  5. `gemini-3.1-flash-lite`
-  6. Built-in Deterministic Heuristic Engine (100% offline-ready fallback).
+### 5. 🤖 Gemini Multi-Model AI Copilot (`/copilot`)
+* **Multi-Model Waterfall Architecture**: Uses Google's active **Gemini** models starting from 3.6-Flash downwards with automated graceful degradation:
+  1. `gemini-3.6-flash`
+  2. `gemini-3.5-flash`
+  3. `gemini-3.5-flash-lite`
+  4. `gemini-3.1-flash-lite`
+  5. `gemini-2.5-flash`
+  6. `gemini-1.5-flash`
+  7. Built-in Deterministic Heuristic Engine (100% offline-ready fallback).
 * **Strict Domain Guardrails**: The assistant is initialized with strict atmospheric science and respiratory defense boundaries. It politely refuses and redirects out-of-scope queries (general trivia, politics, coding, entertainment) back to air quality and personal smog protection.
 * **Interactive Chat Stream**: Discuss localized smog symptoms, N95 vs N99 mask fitment, purifier filter maintenance, and safe travel windows.
 
@@ -176,7 +178,7 @@ cmd /c npm test
 
 ### Verified Algorithmic Seams:
 * `lib/ai/domain-guardrails.test.ts`: Verifies strict rejection of out-of-scope prompts and validation of valid smog/air quality questions.
-* `lib/ai/multi-model.test.ts`: Verifies sequential model fallback ordering through 3.8, 3.6, 3.5, 3.5-lite, 3.1-lite, down to heuristic engine.
+* `lib/ai/multi-model.test.ts`: Verifies sequential model fallback ordering through 3.6, 3.5, 3.5-lite, 3.1-lite, 2.5, down to heuristic engine.
 * `lib/decision-simulator.test.ts`: Validates consequence scoring, PM2.5 inhalation savings, and alternative schedule generation.
 * `lib/household.test.ts`: Validates multi-member household profile aggregations and risk scoring.
 * `lib/aqi-calculator.test.ts`: CPCB mathematical breakpoint formulas and edge cases.
@@ -342,7 +344,7 @@ docker run -p 8080:8080 -e PORT=8080 smogassistant:latest
 
 | Evaluation Criteria | SmogAssistant Implementation |
 | :--- | :--- |
-| **Generative AI Innovation** | Multi-model waterfall across active **Google Gemini 3-Series** (`gemini-3.8-flash`, `3.6-flash`, `3.5-flash`, `3.5-flash-lite`, `3.1-flash-lite`) with strict domain-specific atmospheric guardrails and 100% offline heuristic fallback. |
+| **Generative AI Innovation** | Multi-model waterfall across active **Google Gemini models** (`gemini-3.6-flash`, `3.5-flash`, `3.5-flash-lite`, `3.1-flash-lite`, `2.5-flash`, `1.5-flash`) with strict domain-specific atmospheric guardrails and 100% offline heuristic fallback. |
 | **Real-World Impact** | Solves the seasonal toxic smog crisis across South Asian and industrial metros by giving households actionable, time-blocked diurnal defense protocols. |
 | **Interactivity & Engagement** | Interactive diurnal decision simulator visualizing personal consequence metrics ($\text{PM}_{2.5}$ saved, $\text{CO}_2$ avoided, tree-hour offsets) alongside alternative schedule recommendations. |
 | **Multi-Member Inclusivity** | Multi-member household modeling synthesizing combined collective defense alongside personalized directives for children, seniors, and asthmatics. |

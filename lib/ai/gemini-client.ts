@@ -17,14 +17,14 @@ import { isAirQualityDomainQuery } from "./domain-guardrails";
  * prioritizing 3-series models with multi-model fallback cascading.
  */
 export async function verifyGeminiKey(apiKey: string): Promise<{ valid: boolean; message: string; modelAuthenticated?: string }> {
-  if (!apiKey || apiKey.trim().length === 0) {
+  const cleanKey = apiKey ? apiKey.replace(/['"\r\n\t]/g, "").trim() : "";
+  if (!cleanKey || cleanKey.length === 0) {
     return { valid: false, message: "API key cannot be empty" };
   }
 
   try {
-    const genAI = new GoogleGenerativeAI(apiKey.trim());
+    const genAI = new GoogleGenerativeAI(cleanKey);
     const candidates = [
-      "gemini-3.8-flash",
       "gemini-3.6-flash",
       "gemini-3.5-flash",
       "gemini-3.5-flash-lite",
@@ -38,7 +38,13 @@ export async function verifyGeminiKey(apiKey: string): Promise<{ valid: boolean;
 
     for (const testModel of candidates) {
       try {
-        const model = genAI.getGenerativeModel({ model: testModel });
+        const model = genAI.getGenerativeModel({ 
+          model: testModel,
+          generationConfig: {
+            temperature: 0.0,
+            maxOutputTokens: 5,
+          },
+        });
         const result = await model.generateContent("Respond with the single word: OK");
         const text = result.response.text();
         if (text && text.length > 0) {
@@ -53,7 +59,7 @@ export async function verifyGeminiKey(apiKey: string): Promise<{ valid: boolean;
     if (authedModel) {
       return { 
         valid: true, 
-        message: `Gemini 3-Series Multi-Model Waterfall (${authedModel}) authenticated successfully!`,
+        message: `Gemini Waterfall (${authedModel}) authenticated successfully!`,
         modelAuthenticated: authedModel,
       };
     }

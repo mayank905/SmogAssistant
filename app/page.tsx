@@ -83,8 +83,8 @@ export default function Home() {
       icon: Sparkles,
       color: "from-indigo-600 to-purple-500",
       accentBg: "bg-indigo-50 text-indigo-700 border-indigo-200",
-      badge: keysState.isGeminiValid ? "Gemini 3-Series Connected" : "Guardrail Protected",
-      description: "Domain-guarded environmental health assistant powered by Gemini 3.8/3.6/3.5 Flash waterfall.",
+      badge: keysState.isGeminiValid ? "Gemini 3.6+ Connected" : "Guardrail Protected",
+      description: "Domain-guarded environmental health assistant powered by Gemini 3.6/3.5 Flash waterfall.",
       stat: "Strict Air Quality Redirection",
     },
     {
@@ -166,8 +166,8 @@ export default function Home() {
             <span className="text-slate-700 font-medium">
               Live Features Activated:{" "}
               {keysState.isGeminiValid && (
-                <strong className="text-indigo-800 mr-2" title="Waterfall sequence: gemini-3.8-flash → gemini-3.6-flash → gemini-3.5-flash → gemini-3.5-flash-lite → gemini-3.1-flash-lite">
-                  ✓ Gemini 3-Series Waterfall Active (3.8 → 3.6 → 3.5 → Lite)
+                <strong className="text-indigo-800 mr-2" title="Waterfall sequence: gemini-3.6-flash → gemini-3.5-flash → gemini-3.5-flash-lite → gemini-3.1-flash-lite → gemini-2.5-flash">
+                  ✓ Gemini Waterfall Active (3.6 → 3.5 → Lite → 2.5)
                 </strong>
               )}
               {keysState.isWaqiValid && (
@@ -267,7 +267,7 @@ export default function Home() {
             Active Recommendation Engine:{" "}
             <strong className="text-slate-800">
               {recommendations.meta?.engine === "gemini-genai" 
-                ? "Google Gemini 3-Series Multi-Model Waterfall (3.8 Flash → 3.6 Flash → 3.5 Flash → 3.5 Flash-Lite → 3.1 Flash-Lite)" 
+                ? "Google Gemini Multi-Model Waterfall (3.6 Flash → 3.5 Flash → 3.5 Flash-Lite → 3.1 Flash-Lite → 2.5 Flash)" 
                 : "Deterministic Heuristic Engine (100% Offline-Resilient)"}
             </strong>
           </span>

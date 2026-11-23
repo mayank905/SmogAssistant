@@ -14,16 +14,14 @@ import { isAirQualityDomainQuery, GUARDRAILS_SYSTEM_PROMPT, AIR_QUALITY_REFUSAL_
 import { generateDeterministicRecommendations } from "./heuristic-fallback";
 
 /**
- * Comprehensive 3-Series Active Gemini Models
- * Prioritizes high-efficiency Flash, balanced Flash, and ultra-fast Flash-Lite tiers in strict sequence:
- * 1. gemini-3.8-flash
- * 2. gemini-3.6-flash
- * 3. gemini-3.5-flash
- * 4. gemini-3.5-flash-lite
- * 5. gemini-3.1-flash-lite
+ * Comprehensive Active Gemini Models (Starting from 3.6-Flash downwards)
+ * Prioritizes high-throughput text models free from top-tier saturation:
+ * 1. gemini-3.6-flash
+ * 2. gemini-3.5-flash
+ * 3. gemini-3.5-flash-lite
+ * 4. gemini-3.1-flash-lite
  */
 export const GEMINI_3_SERIES_MODELS = [
-  "gemini-3.8-flash",
   "gemini-3.6-flash",
   "gemini-3.5-flash",
   "gemini-3.5-flash-lite",
@@ -32,20 +30,27 @@ export const GEMINI_3_SERIES_MODELS = [
 
 /**
  * Modern Active Model Waterfall
- * Prioritizes all active 3-series models under fallback criteria:
- * gemini-3.8-flash -> gemini-3.6-flash -> gemini-3.5-flash -> gemini-3.5-flash-lite -> gemini-3.1-flash-lite,
- * cascading down through 2.x and 1.5 generations, and finally to local deterministic reasoning engines.
+ * Prioritizes 3.6-flash down through 3.5, 3.1, 2.5, 1.5 generations for fast text responses,
+ * and finally cascades to local deterministic reasoning engines:
+ * gemini-3.6-flash -> gemini-3.5-flash -> gemini-3.5-flash-lite -> gemini-3.1-flash-lite -> gemini-2.5-flash -> gemini-1.5-flash -> deterministic-fallback
  */
 export const MODEL_WATERFALL = [
   ...GEMINI_3_SERIES_MODELS,
   "gemini-2.5-flash",
   "gemini-1.5-flash",
-  "gemini-1.5-pro",
   "deterministic-fallback",
 ] as const;
 
 export function is3SeriesModel(modelName: string): boolean {
   return /gemini-3(\.|\b)/i.test(modelName);
+}
+
+/**
+ * Strips outer quotes, whitespace, and formatting anomalies from API keys
+ */
+export function cleanApiKey(key?: string): string {
+  if (!key || typeof key !== "string") return "";
+  return key.replace(/['"\r\n\t]/g, "").trim();
 }
 
 export type ModelTier = typeof MODEL_WATERFALL[number];
@@ -155,7 +160,7 @@ export async function queryCopilotWithGuardrails(
     };
   }
 
-  const apiKey = overrideApiKey?.trim() || process.env.GEMINI_API_KEY;
+  const apiKey = cleanApiKey(overrideApiKey || process.env.GEMINI_API_KEY);
 
   // If no API key configured, jump straight to deterministic fallback
   if (!apiKey) {
@@ -209,6 +214,10 @@ Provide a structured, scientifically accurate, empathetic response specifically 
       const model = genAI.getGenerativeModel({
         model: modelTier,
         systemInstruction: GUARDRAILS_SYSTEM_PROMPT,
+        generationConfig: {
+          temperature: 0.2,
+          maxOutputTokens: 1024,
+        },
       });
 
       const result = await model.generateContent(prompt);
@@ -452,7 +461,7 @@ export async function generateHouseholdAdvice(
   overrideApiKey?: string
 ): Promise<HouseholdAdviceResponse> {
   const startTime = Date.now();
-  const apiKey = overrideApiKey?.trim() || process.env.GEMINI_API_KEY;
+  const apiKey = cleanApiKey(overrideApiKey || process.env.GEMINI_API_KEY);
 
   if (!apiKey) {
     const fallback = generateDeterministicHouseholdAdvice(telemetry, members);
@@ -594,7 +603,7 @@ export async function generateMultiModelRecommendations(
   overrideApiKey?: string
 ): Promise<AIRecommendationResponse> {
   const startTime = Date.now();
-  const apiKey = overrideApiKey?.trim() || process.env.GEMINI_API_KEY;
+  const apiKey = cleanApiKey(overrideApiKey || process.env.GEMINI_API_KEY);
 
   if (!apiKey) {
     const fallback = generateDeterministicRecommendations(telemetry, context);

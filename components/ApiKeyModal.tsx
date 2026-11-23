@@ -27,7 +27,7 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
   const [isVerifyingWaqi, setIsVerifyingWaqi] = useState(false);
 
   const [geminiStatus, setGeminiStatus] = useState<{ valid: boolean; message: string } | null>(
-    keysState.isGeminiValid ? { valid: true, message: "Gemini 3.x / 2.5 Multi-Model Active" } : null
+    keysState.isGeminiValid ? { valid: true, message: "Gemini 3.6+ Multi-Model Active" } : null
   );
   const [waqiStatus, setWaqiStatus] = useState<{ valid: boolean; message: string } | null>(
     keysState.isWaqiValid ? { valid: true, message: "WAQI Live Station Feed Active" } : null
@@ -50,18 +50,21 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
   const handleVerifyGemini = async () => {
     setIsVerifyingGemini(true);
     setGeminiStatus(null);
+    const sanitizedGemini = geminiKey.replace(/['"\r\n\t]/g, "").trim();
+    const sanitizedWaqi = waqiToken.replace(/['"\r\n\t]/g, "").trim();
     try {
       const res = await fetch("/api/auth-keys", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type: "gemini", geminiKey }),
+        body: JSON.stringify({ type: "gemini", geminiKey: sanitizedGemini }),
       });
       const data = await res.json();
       if (data.gemini) {
         setGeminiStatus(data.gemini);
+        setGeminiKey(sanitizedGemini);
         onUpdateKeys({
-          geminiKey,
-          waqiToken,
+          geminiKey: sanitizedGemini,
+          waqiToken: sanitizedWaqi,
           isGeminiValid: data.gemini.valid,
           isWaqiValid: waqiStatus?.valid ?? keysState.isWaqiValid,
         });
@@ -77,18 +80,21 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
   const handleVerifyWaqi = async () => {
     setIsVerifyingWaqi(true);
     setWaqiStatus(null);
+    const sanitizedGemini = geminiKey.replace(/['"\r\n\t]/g, "").trim();
+    const sanitizedWaqi = waqiToken.replace(/['"\r\n\t]/g, "").trim();
     try {
       const res = await fetch("/api/auth-keys", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type: "waqi", waqiToken }),
+        body: JSON.stringify({ type: "waqi", waqiToken: sanitizedWaqi }),
       });
       const data = await res.json();
       if (data.waqi) {
         setWaqiStatus(data.waqi);
+        setWaqiToken(sanitizedWaqi);
         onUpdateKeys({
-          geminiKey,
-          waqiToken,
+          geminiKey: sanitizedGemini,
+          waqiToken: sanitizedWaqi,
           isGeminiValid: geminiStatus?.valid ?? keysState.isGeminiValid,
           isWaqiValid: data.waqi.valid,
         });
@@ -101,9 +107,11 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
   };
 
   const handleSaveAndClose = () => {
+    const sanitizedGemini = geminiKey.replace(/['"\r\n\t]/g, "").trim();
+    const sanitizedWaqi = waqiToken.replace(/['"\r\n\t]/g, "").trim();
     onUpdateKeys({
-      geminiKey,
-      waqiToken,
+      geminiKey: sanitizedGemini,
+      waqiToken: sanitizedWaqi,
       isGeminiValid: geminiStatus?.valid ?? keysState.isGeminiValid,
       isWaqiValid: waqiStatus?.valid ?? keysState.isWaqiValid,
     });
@@ -163,7 +171,7 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
                     Google Gemini API Key
                   </h4>
                   <p className="text-xs text-slate-500">
-                    Powers Gemini 3-Series Multi-Model Waterfall (3.8 Flash → 3.6 Flash → 3.5 Flash → 3.5 Flash-Lite → 3.1 Flash-Lite)
+                    Powers Gemini Waterfall (3.6 Flash → 3.5 Flash → 3.5 Flash-Lite → 3.1 Flash-Lite → 2.5 Flash)
                   </p>
                 </div>
               </div>

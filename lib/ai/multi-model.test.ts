@@ -17,21 +17,18 @@ describe("Multi-Model Client & Waterfall Architecture", () => {
   describe("Model Waterfall Specifications", () => {
     it("defines the modern active model waterfall in exact priority order", () => {
       expect(MODEL_WATERFALL).toEqual([
-        "gemini-3.8-flash",
         "gemini-3.6-flash",
         "gemini-3.5-flash",
         "gemini-3.5-flash-lite",
         "gemini-3.1-flash-lite",
         "gemini-2.5-flash",
         "gemini-1.5-flash",
-        "gemini-1.5-pro",
         "deterministic-fallback",
       ]);
     });
 
     it("defines all active 3-series models in sequential fallback order", () => {
       expect(GEMINI_3_SERIES_MODELS).toEqual([
-        "gemini-3.8-flash",
         "gemini-3.6-flash",
         "gemini-3.5-flash",
         "gemini-3.5-flash-lite",

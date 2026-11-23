@@ -25,13 +25,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Defensive validation for clientKey
+    // Defensive validation and sanitization for clientKey
     let clientKey = request.headers.get("x-gemini-key") || apiKey;
     if (clientKey) {
-      if (typeof clientKey !== "string" || clientKey.length > 256 || !/^[A-Za-z0-9_-]+$/.test(clientKey.trim())) {
-        return NextResponse.json({ error: "Malformed Gemini API Key provided." }, { status: 400 });
+      if (typeof clientKey !== "string") {
+        return NextResponse.json({ error: "Invalid Gemini API Key format." }, { status: 400 });
       }
-      clientKey = clientKey.trim();
+      clientKey = clientKey.replace(/['"\r\n\t]/g, "").trim();
+      if (clientKey.length < 10 || clientKey.length > 512) {
+        return NextResponse.json({ error: "Invalid Gemini API Key length." }, { status: 400 });
+      }
     }
 
     const result = await queryCopilotWithGuardrails(sanitizedQuery, telemetry, context, clientKey);

@@ -24,13 +24,16 @@ export async function POST(request: NextRequest) {
       }
     }
     
-    // Defensive check for client-provided Gemini key
+    // Defensive check and sanitization for client-provided Gemini key
     let clientKey = request.headers.get("x-gemini-key") || body.apiKey;
     if (clientKey) {
-      if (typeof clientKey !== "string" || clientKey.length > 256 || !/^[A-Za-z0-9_-]+$/.test(clientKey.trim())) {
-        return NextResponse.json({ error: "Malformed Gemini API Key provided." }, { status: 400 });
+      if (typeof clientKey !== "string") {
+        return NextResponse.json({ error: "Invalid Gemini API Key format." }, { status: 400 });
       }
-      clientKey = clientKey.trim();
+      clientKey = clientKey.replace(/['"\r\n\t]/g, "").trim();
+      if (clientKey.length < 10 || clientKey.length > 512) {
+        return NextResponse.json({ error: "Invalid Gemini API Key length." }, { status: 400 });
+      }
     }
 
     // If client specifically requests household advice or only provides members
